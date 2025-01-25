@@ -81,8 +81,9 @@ def project(name):
         if superpe.is_dll():
             exports = superpe.get_exports_full()
         code_sect_size = superpe.get_code_section().Misc_VirtualSize
-        if superpe.get_section_by_name(".rdata") != None:
-            data_sect_size = superpe.get_section_by_name(".rdata").virt_size
+        rdata_section = superpe.get_section_by_name(".rdata")
+        if rdata_section != None:
+            data_sect_size = rdata_section.virt_size
         else:
             logger.warning("No .rdata section found in {}".format(project.settings.inject_exe_in))
         
@@ -178,8 +179,8 @@ def add_project():
         if storage.get_project(project_name) == None:
             # Default values for web create
             settings.init_payload_injectable(
-                "messagebox.bin",
-                "data/binary/exes/procexp64.exe",
+                FilePath("messagebox.bin"),
+                FilePath("data/binary/exes/procexp64.exe"),
                 ""
             )
             settings.decoder_style = "xor_2"
@@ -347,7 +348,7 @@ def get_logfiles(directory):
             elif '.log' in file:
                 data = conv.convert(data, full=False)
             else:
-                data = escape(data)
+                data = data
 
             entry = {
                 "name": file,

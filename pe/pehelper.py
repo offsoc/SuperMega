@@ -43,13 +43,13 @@ def extract_code_from_exe_file_ep(exe_file: FilePath, len: int) -> bytes:
     return data
 
 
-def get_physical_address_tmp(pe, virtual_address):
+def get_physical_address_tmp(pe, virtual_address) -> int:
     for section in pe.sections:
         if section.VirtualAddress <= virtual_address < section.VirtualAddress + section.Misc_VirtualSize:
             virtual_offset = virtual_address - section.VirtualAddress
             physical_address = section.PointerToRawData + virtual_offset
             return physical_address
-    return None
+    raise Exception("pehelper::get_physical_address(): Address not found")
 
 
 def extract_code_from_exe_file(exe_file: FilePath) -> bytes:

@@ -110,7 +110,7 @@ def run_process_checkret(args, check=True):
 def try_start_shellcode(shc_file):
     logger.info("--[ Blindly execute shellcode: {}".format(shc_file))
     subprocess.run([
-        config.get["path_runshc"],
+        config.get("path_runshc"),
         shc_file,
     ])
 

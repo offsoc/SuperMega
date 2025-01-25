@@ -80,10 +80,10 @@ def main():
             logger.info("Could not find: {}".format(args.inject))
             return
         settings.inject_exe_in = args.inject
-        settings.inject_exe_out = "{}{}".format(
+        settings.inject_exe_out = FilePath("{}{}".format(
             settings.main_dir,
             os.path.basename(args.inject).replace(".exe", ".injected.exe")
-        )
+        ))
         settings.inject_exe_out = args.inject.replace(".exe", ".infected.exe").replace(".dll", ".infected.dll")
 
     write_webproject("default", settings)
@@ -200,12 +200,10 @@ def start_real(settings: Settings):
         raise Exception("IAT entry not found: {}".format(", ".join(functions)))
 
     # ASSEMBLE: Assemble .asm to .shc (ASM -> SHC)
-    if settings.generate_shc_from_asm:
-        carrier_shellcode: bytes = phases.assembler.asm_to_shellcode(
-            asm_in = settings.main_asm_path, 
-            build_exe = settings.main_exe_path)
-        observer.add_code_file("carrier_shc", carrier_shellcode)
-
+    carrier_shellcode: bytes = phases.assembler.asm_to_shellcode(
+        asm_in = settings.main_asm_path, 
+        build_exe = settings.main_exe_path)
+    observer.add_code_file("carrier_shc", carrier_shellcode)
     logging.info("> Carrier Size: {}   Payload Size: {}".format(
         len(carrier_shellcode), len(project.payload.payload_data)
     ))

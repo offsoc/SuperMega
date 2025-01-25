@@ -29,7 +29,8 @@ class SuperPeTest(unittest.TestCase):
         self.assertEqual(code_sect.Misc_VirtualSize, 0x11B0CE)
 
         # Text Section 2 (PeSection)
-        code_pesect: PeSection = superpe.get_section_by_name(".text")
+        code_pesect = superpe.get_section_by_name(".text")
+        self.assertIsNotNone(code_pesect)
         self.assertEqual(code_pesect.name, ".text")
         self.assertEqual(code_pesect.virt_addr, 0x1000)
         self.assertEqual(code_pesect.virt_size, 0x11B0CE)
@@ -43,7 +44,7 @@ class SuperPeTest(unittest.TestCase):
         self.assertEqual(base_reloc.offset, 0x618)
 
         # IAT
-        iat_entries: Dict[str, IatEntry] = superpe.get_iat_entries()
+        iat_entries: Dict[str, List[IatEntry]] = superpe.get_iat_entries()
         self.assertEqual(len(iat_entries), 24)
         self.assertTrue("kernel32.dll" in iat_entries)
         self.assertTrue("uxtheme.dll" in iat_entries)
@@ -89,6 +90,7 @@ class SuperPeTest(unittest.TestCase):
 
         # Text Section 2 (PeSection)
         code_pesect: PeSection = superpe.get_section_by_name(".text")
+        self.assertIsNotNone(code_pesect)
         self.assertEqual(code_pesect.name, ".text")
         self.assertEqual(code_pesect.virt_addr, 0x1000)
         self.assertEqual(code_pesect.virt_size, 0x12D08)
@@ -102,7 +104,7 @@ class SuperPeTest(unittest.TestCase):
         self.assertEqual(base_reloc.offset, 0xCE8)
 
         # IAT
-        iat_entries: Dict[str, IatEntry] = superpe.get_iat_entries()
+        iat_entries: Dict[str, List[IatEntry]] = superpe.get_iat_entries()
         self.assertEqual(len(iat_entries), 2)
         self.assertTrue("kernel32.dll" in iat_entries)
         self.assertTrue("msvcrt.dll" in iat_entries)

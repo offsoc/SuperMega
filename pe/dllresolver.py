@@ -62,4 +62,4 @@ def search_for_dll(dll_name) -> str:
         full_path = os.path.join(path, dll_name)
         if os.path.exists(full_path):
             return full_path
-    return None
+    return "<not found>"

@@ -42,8 +42,8 @@ class Injector():
         self.rdata_manager = self.superpe.get_rdata_rangemanager()
         self.code_manager = self.superpe.get_code_rangemanager()
 
-        self.payload_rva = None
-        self.carrier_rva = None
+        self.payload_rva: int = 0
+        self.carrier_rva: int = 0
         self.init_addresses()
 
 
@@ -100,7 +100,11 @@ class Injector():
                 raise Exception('No hole found in code section to fit payload!')
             largest_gap_size = largest_gap[0][1] - largest_gap[0][0]
             offset = largest_gap[0][0]
-            self.payload_rva = self.superpe.get_section_by_name(".rdata").virt_addr + offset
+
+            rdata_section = self.superpe.get_section_by_name(".rdata")
+            if rdata_section == None:
+                raise Exception("No .rdata section found in PE file")
+            self.payload_rva = rdata_section.virt_addr + offset
             self.rdata_manager.add_range(offset, offset+len(self.payload.payload_data))
 
     ## Inject
@@ -137,8 +141,6 @@ class Injector():
 
         else:  # EXE/DLL
             carrier_offset = self.superpe.get_offset_from_rva(self.carrier_rva)
-            if carrier_offset == None:
-                raise Exception("Carrier Offset is None, invalid carrier RVA? 0x{:X}".format(self.carrier_rva))
             #logger.info("{} {}".format(self.carrier_rva, carrier_offset))
             logger.info("--[ Inject: Write Carrier to 0x{:X} (0x{:X})".format(
                 self.carrier_rva, carrier_offset))

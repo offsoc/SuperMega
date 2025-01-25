@@ -5,7 +5,7 @@ class FilePath(str):
     pass
 
 # with data/shellcodes/createfile.bin
-VerifyFilename: FilePath = r'C:\Temp\a'
+VerifyFilename: FilePath = FilePath("C:\\Temp\\a")
 
 # Directory structure
 PATH_EXES = "data/binary/exes/"

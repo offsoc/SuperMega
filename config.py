@@ -63,7 +63,7 @@ class Config(object):
     def getConfig(self):
         return self.data
 
-    def get(self, value):
+    def get(self, value) -> str:
         return self.data.get(value, "")
 
 config = Config()

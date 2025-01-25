@@ -3,6 +3,7 @@ import capstone
 import logging
 from typing import List, Dict
 import random
+from typing import Optional
 
 from model.defs import *
 from model.rangemanager import RangeManager
@@ -40,7 +41,7 @@ class SuperPe():
         for section in self.pe.sections:
             self.pe_sections.append(PeSection(section))
 
-        self.iat_entries: Dict[str, IatEntry] = {}
+        self.iat_entries: Dict[str, List[IatEntry]] = {}
         self.init_iat_entries()
         
 
@@ -121,7 +122,7 @@ class SuperPe():
         return None
 
 
-    def get_section_by_name(self, name: str) -> PeSection:
+    def get_section_by_name(self, name: str) -> Optional[PeSection]:
         for section in self.pe_sections:
             if section.name == name:
                 return section
@@ -165,7 +166,7 @@ class SuperPe():
         return base_relocs
 
 
-    def getExportEntryPoint(self, exportName: str):
+    def getExportEntryPoint(self, exportName: str) -> int:
         dec = lambda x: '???' if x is None else x.decode() 
         d = [pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]]
         #self.pe.parse_data_directories(directories=d)
@@ -174,7 +175,7 @@ class SuperPe():
             raise Exception('No DLL exports found!')
         
         exports = [(e.ordinal, dec(e.name)) for e in self.pe.DIRECTORY_ENTRY_EXPORT.symbols]
-        chosen_export = None
+        chosen_export = []
         for export in exports:
             if export[1].lower() == exportName.lower():
                 chosen_export = export
@@ -183,8 +184,9 @@ class SuperPe():
         name = chosen_export[1]
         for exp in self.pe.DIRECTORY_ENTRY_EXPORT.symbols:
             if exp.name.decode() == name:
-                addr = exp.address
-        return addr
+                return exp.address
+        raise Exception("Cant find entry point for export {}".format(exportName))
+
     
 
     def get_exports(self) -> List[str]:
@@ -229,12 +231,12 @@ class SuperPe():
 
         return res
     
-    def get_size_of_exported_function(self, dllfunc):
+    def get_size_of_exported_function(self, dllfunc) -> int:
         exports = self.get_exports_full()
         for exp in exports:
             if exp["name"] == dllfunc:
                 return exp["size"]
-        return None
+        return 0
    
 
     ## IAT
@@ -245,14 +247,14 @@ class SuperPe():
             for entry in iat[dll_name]:
                 if entry.func_name == func_name:
                     return entry.iat_vaddr
-        return None
+        raise Exception(f"Function {func_name} not found in IAT")
     
 
-    def get_iat_entries(self) -> Dict[str, IatEntry]:
+    def get_iat_entries(self) -> Dict[str, List[IatEntry]]:
         return self.iat_entries
     
 
-    def make_iat_entries(self) -> Dict[str, IatEntry]:
+    def make_iat_entries(self):
         iat = {}
         for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
             for imp in entry.imports:
@@ -280,7 +282,7 @@ class SuperPe():
                 possible.append(entry.func_name)
 
         if len(possible) == 0:
-            return None
+            raise Exception("No alternatives found for function name")
         else:
             # Hope there wont be many collisions
             return random.choice(possible)
@@ -301,7 +303,7 @@ class SuperPe():
                 if funcname == encoded_funcname:
                     return imp.name_offset
             break
-        return None
+        raise Exception(f"Import {func_name} not found.")
     
     
     def patch_iat_entry(self, dll_name: str, func_name: str, new_func_name: str):
@@ -325,6 +327,8 @@ class SuperPe():
     ## .rdata manager
     def get_rdata_rangemanager(self) -> RangeManager:
         section = self.get_section_by_name(".rdata")
+        if section == None:
+            raise Exception("No .rdata section found in PE file")
         relocs = self.get_relocations_for_section(".rdata")
         rm = RangeManager(section.virt_addr, section.virt_addr + section.virt_size)
         for reloc in relocs:
@@ -347,8 +351,8 @@ class SuperPe():
     
 
     def get_relocations_for_section(self, section_name: str) -> List[PeRelocEntry]:
-        section: PeSection = self.get_section_by_name(section_name)
         ret = []
+        section = self.get_section_by_name(section_name)
         if section is None:
             return ret
         for reloc in self.get_base_relocs():
@@ -396,7 +400,7 @@ class SuperPe():
                 # Add the difference to the section's pointer to raw data
                 physical_address = section.PointerToRawData + virtual_offset
                 return physical_address
-        return None
+        raise Exception("Cant translate VA to offset")
     
 
     def write_pe_to_file(self, outfile: str):
