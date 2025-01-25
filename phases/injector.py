@@ -120,7 +120,7 @@ class Injector():
 
         # Special case: DLL exported function direct overwrite
         if self.superpe.is_dll() and self.settings.dllfunc != "" and carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-            logger.warning("---[ Inject DLL: Overwrite exported function {} with shellcode".format(settings.dllfunc))
+            logger.warning("---[ Inject DLL: Overwrite exported function {} with shellcode".format(self.settings.dllfunc))
             rva = self.superpe.getExportEntryPoint(self.settings.dllfunc)
 
             # Size and sanity checks
@@ -180,6 +180,10 @@ class Injector():
         # changes from console to UI (no console window) if necessary
         if self.settings.patch_show_window:
             self.superpe.patch_subsystem()
+
+        # correct checksum
+        new_checksum = self.superpe.pe.generate_checksum()
+        self.superpe.pe.OPTIONAL_HEADER.CheckSum = new_checksum
 
         # We done
         logger.info("--( Write to file: {}".format(exe_out))
