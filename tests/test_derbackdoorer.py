@@ -24,8 +24,8 @@ class DerBackdoorerTest(unittest.TestCase):
 
 
     def test_function_backdoorer_dll(self):
-        superpe = SuperPe(PATH_EXES + "libbz2-1.dll")
+        superpe = SuperPe(PATH_DLLS + "TestDLL.dll")
         function_backdoorer = FunctionBackdoorer(superpe)
 
         addr = function_backdoorer.find_suitable_instruction_addr(superpe.get_entrypoint())
-        self.assertEqual(addr, 0x135D)
+        self.assertEqual(addr, 0x13CA)
