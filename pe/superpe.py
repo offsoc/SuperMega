@@ -247,7 +247,7 @@ class SuperPe():
             for entry in iat[dll_name]:
                 if entry.func_name == func_name:
                     return entry.iat_vaddr
-        raise Exception(f"Function {func_name} not found in IAT")
+        return None
     
 
     def get_iat_entries(self) -> Dict[str, List[IatEntry]]:

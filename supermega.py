@@ -197,7 +197,10 @@ def start_real(settings: Settings):
     # CHECK if all are available in infectable, or abort (early check)
     functions = project.injectable.get_unresolved_iat()
     if len(functions) != 0 and settings.fix_missing_iat == False:
-        raise Exception("IAT entry not found: {}".format(", ".join(functions)))
+        logging.error("IAT entries not found in infectable: {}".format(", ".join(functions)))
+        logging.error("The carrier depends on these functions, but they are not available in the infectable exe.")
+        logging.error("Use another infectable exe, or update the carrier to not depend on these functions.")
+        raise Exception("Required carrier import not found in infectable: {}".format(", ".join(functions)))
 
     # ASSEMBLE: Assemble .asm to .shc (ASM -> SHC)
     carrier_shellcode: bytes = phases.assembler.asm_to_shellcode(
