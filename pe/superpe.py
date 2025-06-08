@@ -37,7 +37,7 @@ class SuperPe():
     def __init__(self, infile: str):
         self.filepath: str = infile
         self.pe_sections: List[PeSection] = []
-        self.pe = pefile.PE(infile, fast_load=False)
+        self.pe: pefile.PE = pefile.PE(infile, fast_load=False)
         for section in self.pe.sections:
             self.pe_sections.append(PeSection(section))
 
@@ -101,7 +101,9 @@ class SuperPe():
             if sect.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']:
                 if entrypoint >= sect.VirtualAddress and entrypoint <= sect.VirtualAddress + sect.Misc_VirtualSize:
                     return sect
-        return None
+                
+        # there should always be a code section. Always.
+        raise Exception("pehelper::get_code_section(): Code section not found")
         
 
     def get_code_section_data(self) -> bytes:
@@ -109,7 +111,7 @@ class SuperPe():
         return bytes(sect.get_data())
     
 
-    def get_rwx_section(self) -> pefile.SectionStructure:
+    def get_rwx_section(self) -> Optional[pefile.SectionStructure]:
         # rwx section
         entrypoint = self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
         for section in self.pe.sections:
@@ -241,7 +243,7 @@ class SuperPe():
 
     ## IAT
 
-    def get_vaddr_of_iatentry(self, func_name: str) -> int:
+    def get_vaddr_of_iatentry(self, func_name: str) -> Optional[int]:
         iat = self.get_iat_entries()
         for dll_name in iat:
             for entry in iat[dll_name]:
@@ -365,8 +367,6 @@ class SuperPe():
 
     def get_code_rangemanager(self) -> RangeManager:
         code_section = self.get_code_section()
-        if code_section == None:
-            raise Exception('Could not find code section in input PE file!')
         code_section_size = code_section.Misc_VirtualSize
         
         # Restrictions for putting data into .text: 
