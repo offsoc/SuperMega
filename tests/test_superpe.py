@@ -31,9 +31,10 @@ class SuperPeTest(unittest.TestCase):
         # Text Section 2 (PeSection)
         code_pesect = superpe.get_section_by_name(".text")
         self.assertIsNotNone(code_pesect)
-        self.assertEqual(code_pesect.name, ".text")
-        self.assertEqual(code_pesect.virt_addr, 0x1000)
-        self.assertEqual(code_pesect.virt_size, 0x11B0CE)
+        if code_pesect is not None:
+            self.assertEqual(code_pesect.name, ".text")
+            self.assertEqual(code_pesect.virt_addr, 0x1000)
+            self.assertEqual(code_pesect.virt_size, 0x11B0CE)
 
         # Relocations
         base_relocs: List[PeRelocEntry] = superpe.get_base_relocs()
@@ -89,11 +90,12 @@ class SuperPeTest(unittest.TestCase):
         self.assertEqual(code_sect.Misc_VirtualSize, 3912)
 
         # Text Section 2 (PeSection)
-        code_pesect: PeSection = superpe.get_section_by_name(".text")
+        code_pesect: PeSection|None = superpe.get_section_by_name(".text")
         self.assertIsNotNone(code_pesect)
-        self.assertEqual(code_pesect.name, ".text")
-        self.assertEqual(code_pesect.virt_addr, 0x1000)
-        self.assertEqual(code_pesect.virt_size, 3912)
+        if code_pesect is not None:
+            self.assertEqual(code_pesect.name, ".text")
+            self.assertEqual(code_pesect.virt_addr, 0x1000)
+            self.assertEqual(code_pesect.virt_size, 3912)
 
         # Relocations
         base_relocs: List[PeRelocEntry] = superpe.get_base_relocs()

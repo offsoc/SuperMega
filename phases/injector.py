@@ -114,7 +114,7 @@ class Injector():
         exe_out = self.settings.inject_exe_out
         carrier_invoke_style: CarrierInvokeStyle = self.settings.carrier_invoke_style
 
-        logger.info("-[ Injecting: into {} -> {}".format(exe_in, exe_out))
+        logger.info("-[ Injecting into {} -> {}".format(exe_in, exe_out))
 
         # Patch IAT (if necessary and wanted)
         self.injectable_patch_iat()
@@ -142,7 +142,7 @@ class Injector():
         else:  # EXE/DLL
             carrier_offset = self.superpe.get_offset_from_rva(self.carrier_rva)
             #logger.info("{} {}".format(self.carrier_rva, carrier_offset))
-            logger.info("--[ Inject: Write Carrier to 0x{:X} (0x{:X})".format(
+            logger.info("--( Inject: Write Carrier to 0x{:X} (0x{:X})".format(
                 self.carrier_rva, carrier_offset))
 
             # Copy the carrier
@@ -163,13 +163,13 @@ class Injector():
 
             else: # EXE
                 if carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-                    logger.info("---( Inject EXE: Change Entry Point to 0x{:X}".format(
+                    logger.info("--( Inject EXE: Change Entry Point to 0x{:X}".format(
                         self.carrier_rva))
                     self.superpe.set_entrypoint(self.carrier_rva)
 
                 elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
                     addr = self.superpe.get_entrypoint()
-                    logger.info("---( Inject EXE: Backdoor function at entrypoint (0x{:X})".format(
+                    logger.info("--( Inject EXE: Backdoor function at entrypoint (0x{:X})".format(
                         addr))
                     self.function_backdoorer.backdoor_function(
                         addr, self.carrier_rva, carrier_shc_len)
@@ -198,12 +198,13 @@ class Injector():
 
 
     def injectable_patch_iat(self):
+        logger.info("--( Checking if IAT entries required by carrier are available")
         # Patch IAT (if necessary and wanted)
         for iatRequest in self.injectable.get_all_iat_requests():
             # skip available
             addr = self.superpe.get_vaddr_of_iatentry(iatRequest.name)
             if addr != None:
-                logger.info("---[ Request IAT {} is available at 0x{:X}".format(
+                logger.debug("---[ Request IAT {} is available at 0x{:X}".format(
                     iatRequest.name, addr))
                 continue
             iat_name = self.superpe.get_replacement_iat_for("KERNEL32.dll", iatRequest.name)
@@ -234,8 +235,11 @@ class Injector():
                 if destination_virtual_address == None:
                     raise Exception("IatResolve: Function {} not found".format(iatRequest.name))
                 
-                instruction_virtual_address = offset_from_code + self.injectable.superpe.get_image_base() + self.superpe.get_code_section().VirtualAddress
-                logger.info("      Replace {} at VA 0x{:X} with: call to IAT at VA 0x{:X} ({})".format(
+                image_base = self.injectable.superpe.get_image_base()
+                va = self.superpe.get_code_section().VirtualAddress
+                instruction_virtual_address = offset_from_code + image_base + va
+                #instruction_virtual_address = offset_from_code + self.injectable.superpe.get_image_base() + self.superpe.get_code_section().VirtualAddress
+                logger.debug("      Replace {} at VA 0x{:X} with: call to IAT at VA 0x{:X} ({})".format(
                     placeholder.hex(), 
                     instruction_virtual_address,
                     destination_virtual_address,
@@ -261,17 +265,19 @@ class Injector():
             return
         
         # insert data
-        logger.info("---( DataReuseFixups: Inject the data")
+        logger.info("--( DataReuseFixups: Inject the data")
         for datareuse_fixup in reusedata_fixups:
-            logger.info("     Handling DataReuse Fixup: {} (.code: {})".format(
+            logger.debug("     Handling DataReuse Fixup: {} (.code: {})".format(
                 datareuse_fixup.string_ref, datareuse_fixup.in_code))
 
             if datareuse_fixup.in_code:  # .text
                 shellcode_offset = self.superpe.pe.get_offset_from_rva(self.payload_rva)
                 self.superpe.pe.set_bytes_at_offset(shellcode_offset, datareuse_fixup.data)
                 payload_rva = self.superpe.pe.get_rva_from_offset(shellcode_offset)
+                if payload_rva == None:
+                    raise Exception("DataReuseFixup: payload_rva is None")
                 datareuse_fixup.addr = payload_rva + self.injectable.superpe.get_image_base()
-                logging.info("       Add to .text at 0x{:X} ({}): {} with size {}".format(
+                logging.debug("       Add to .text at 0x{:X} ({}): {} with size {}".format(
                     datareuse_fixup.addr, payload_rva, datareuse_fixup.string_ref, len(datareuse_fixup.data)))
 
             else:  # .rdata
@@ -288,11 +294,11 @@ class Injector():
                 self.superpe.pe.set_bytes_at_rva(data_rva, var_data)
                 datareuse_fixup.addr = data_rva + self.injectable.superpe.get_image_base()
                 ##
-                logging.info("       Add to .rdata at 0x{:X} ({}): {}: {}".format(
+                logging.debug("       Add to .rdata at 0x{:X} ({}): {}: {}".format(
                     datareuse_fixup.addr, data_rva, datareuse_fixup.string_ref, ui_string_decode(var_data)))
 
         # replace the placeholder in .text with a LEA instruction to the data we written above
-        logger.info("---( Datareusefixups: patch code to reference the data")
+        logger.info("--( Datareusefixups: patch code to reference the data")
         code = self.superpe.get_code_section_data()
         for datareuse_fixup in reusedata_fixups:
             ref: DataReuseReference
@@ -304,7 +310,7 @@ class Injector():
                 offset_from_datasection = code.index(ref.placeholder)
                 instruction_virtual_address = offset_from_datasection + self.superpe.get_image_base() + self.superpe.get_code_section().VirtualAddress
                 destination_virtual_address = datareuse_fixup.addr
-                logger.info("       Replace bytes {} at VA 0x{:X} with: LEA {} .rdata 0x{:X}".format(
+                logger.debug("       Replace bytes {} at VA 0x{:X} with: LEA {} .rdata 0x{:X}".format(
                     ref.placeholder.hex(), instruction_virtual_address, ref.register, destination_virtual_address
                 ))
                 lea = assemble_lea(

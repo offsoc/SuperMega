@@ -46,8 +46,13 @@ class Injectable():
         self.exe_filepath: str = exe_file
         self.superpe: SuperPe = None
 
-    def init(self):
+    def init(self) -> bool:
+        # check if file exists
+        if not os.path.exists(self.exe_filepath):
+            logger.error("Injectable file does not exist: {}".format(self.exe_filepath))
+            return False
         self.superpe = SuperPe(self.exe_filepath)
+        return True
 
 
     # IAT
@@ -77,7 +82,7 @@ class Injectable():
     # Data Reuse
 
     def add_datareuse_fixup(self, fixup: DataReuseEntry):
-        logger.info("---( Add datareuse: {}".format(fixup.string_ref))
+        logger.debug("---( Add datareuse: {}".format(fixup.string_ref))
         self.reusedata_fixups.append(fixup)
 
     def get_all_reusedata_fixups(self) -> List[DataReuseEntry]:

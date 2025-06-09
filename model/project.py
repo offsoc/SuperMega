@@ -28,9 +28,12 @@ class Project():
         self.project_exe: str = ""
 
 
-    def init(self):
-        self.payload.init()
-        self.injectable.init()
+    def init(self) -> bool:
+        if not self.payload.init():
+            return False
+        if not self.injectable.init():
+            return False
+        return True
 
 
 def prepare_project(project_name, settings):

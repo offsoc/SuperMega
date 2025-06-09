@@ -51,7 +51,7 @@ class Config(object):
         else:
             self.xor_key2 = self.data["xor_key2"]
 
-        logger.info("-( Payload encryption keys: XOR: {}  XOR2: {}".format(
+        logger.debug("-( Payload encryption keys: XOR: {}  XOR2: {}".format(
             self.xor_key, self.xor_key2
         ))
 

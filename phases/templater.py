@@ -23,7 +23,7 @@ def get_template_names() -> List[str]:
 
 
 def create_c_from_template(settings: Settings, payload_len: int):
-    logger.info("-( Create C from template: {} -> {}".format(
+    logger.info("-[ Create C from template: {} -> {}".format(
         PATH_DECODER, settings.main_c_path))
     plugin_decoder = ""
 
@@ -69,7 +69,7 @@ def create_c_from_template(settings: Settings, payload_len: int):
                 sir_alloc_count, max_alloc_count
             ))
             sir_alloc_count = max_alloc_count
-        logging.info("> AntiEmulation: iterations: {}  allocs: {}".format(
+        logging.debug("-( AntiEmulation settings: iterations: {}  allocs: {}".format(
             sir_iteration_count, sir_alloc_count)
         )
         plugin_antiemualation = file.read()

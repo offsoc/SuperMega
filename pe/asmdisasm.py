@@ -59,4 +59,4 @@ def printInstr(instr, depth=0):
     if len(instr.bytes) < 8:
         _bytes.extend(['  ',] * (8 - len(instr.bytes)))
     instrBytes = ' '.join([f'{x}' for x in _bytes])
-    logger.info('\t' * 1 + f'    [{instr.address:08x}]\t{instrBytes}' + '\t' * depth + f'{instr.mnemonic}\t{instr.op_str}')
+    logger.debug('\t' * 1 + f'    [{instr.address:08x}]\t{instrBytes}' + '\t' * depth + f'{instr.mnemonic}\t{instr.op_str}')

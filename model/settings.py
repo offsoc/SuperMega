@@ -62,8 +62,8 @@ class Settings():
             self.try_start_final_infected_exe = False
         else:
             self.cleanup_files_on_exit = False
-            
-        self.inject_exe_in = injectable
+        
+        self.inject_exe_in = FilePath(PATH_EXES + injectable)
         self.inject_exe_out = FilePath("{}{}".format(
             self.main_dir,
             os.path.basename(self.inject_exe_in).replace(".exe", ".infected.exe")

