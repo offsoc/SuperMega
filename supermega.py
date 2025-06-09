@@ -156,7 +156,11 @@ def start_real(settings: Settings):
         project.payload.payload_data = preload_dll(project.payload.payload_path)
 
     # CREATE: Carrier C source files from template (C->C)
-    phases.templater.create_c_from_template(settings, len(project.payload.payload_data))
+    try:
+        phases.templater.create_c_from_template(settings, len(project.payload.payload_data))
+    except FileNotFoundError as e:
+        logger.error("Error creating C from template: {}".format(e))
+        return 1
 
     # PREPARE DataReuseEntry for usage in Compiler/AsmTextParser
     # So the carrier is able to find the payload

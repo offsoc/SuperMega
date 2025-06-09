@@ -157,27 +157,25 @@ class Injector():
 
                 elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
                     addr = self.superpe.getExportEntryPoint(self.settings.dllfunc)
-                    logger.info("      Inject: Backdoor DLL {} (0x{:X})".format(
+                    logger.info("      Backdoor DLL {} (0x{:X})".format(
                         self.settings.dllfunc, addr))
                     self.function_backdoorer.backdoor_function(
                         addr, self.carrier_rva, carrier_shc_len)
 
             else: # EXE
                 if carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-                    logger.info("    Inject: Change Entry Point to 0x{:X}".format(
+                    logger.info("    Change Entry Point to 0x{:X}".format(
                         self.carrier_rva))
                     self.superpe.set_entrypoint(self.carrier_rva)
 
                 elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
                     addr = self.superpe.get_entrypoint()
-                    logger.info("    Inject EXE: Backdoor function at entrypoint (0x{:X})".format(
+                    logger.info("    Backdoor function at entrypoint (0x{:X})".format(
                         addr))
                     self.function_backdoorer.backdoor_function(
                         addr, self.carrier_rva, carrier_shc_len)
 
-        logger.info("    Fix imports and make carrier reference IAT")
         self.injectable_write_iat_references()
-        logger.info("    Insert and reference carrier data")
         self.inject_and_reference_data()
 
         # changes from console to UI (no console window) if necessary
@@ -200,23 +198,31 @@ class Injector():
 
     def injectable_patch_iat(self):
         logger.info("    Checking if IAT entries required by carrier are available")
-        # Patch IAT (if necessary and wanted)
-        for iatRequest in self.injectable.get_all_iat_requests():
+        iatRequests = self.injectable.get_all_iat_requests()
+        iatMissing = []
+        
+        for iatRequest in iatRequests:
             # skip available
             addr = self.superpe.get_vaddr_of_iatentry(iatRequest.name)
             if addr != None:
                 logger.debug("      Request IAT {} is available at 0x{:X}".format(
                     iatRequest.name, addr))
-                continue
-            iat_name = self.superpe.get_replacement_iat_for("KERNEL32.dll", iatRequest.name)
+            else:
+                logger.debug("      Request IAT {} is NOT available".format(
+                    iatRequest.name))
+                iatMissing.append(iatRequest)
 
+        logger.info("    IAT entries missing: {}".format(len(iatMissing)))
+        for iatRequest in iatMissing:
+            # Not available, check if we can patch it
+            iat_name = self.superpe.get_replacement_iat_for("KERNEL32.dll", iatRequest.name)
             if not self.settings.fix_missing_iat:
                 raise Exception("Error: {} not available, but fix_missing_iat is False".format(
                     iatRequest.name))
             # do the patch
             self.superpe.patch_iat_entry("KERNEL32.dll", iat_name, iatRequest.name)
-            #logger.info("    Unavailable IAT {} now patched".format(
-            #        iatRequest.name))
+            logger.info("      Patch injectable to import {}".format(
+                    iatRequest.name))
         # we modify the IAT raw, so reparsing is required
         self.superpe.pe.parse_data_directories()
         self.superpe.init_iat_entries()
@@ -266,6 +272,7 @@ class Injector():
             return
         
         # insert data
+        logger.info("    Inject Carrier data into injectable .rdata/.text")
         for datareuse_fixup in reusedata_fixups:
             logger.debug("      Handling DataReuse Fixup: {} (.code: {})".format(
                 datareuse_fixup.string_ref, datareuse_fixup.in_code))
@@ -298,7 +305,7 @@ class Injector():
                     datareuse_fixup.addr, data_rva, datareuse_fixup.string_ref, ui_string_decode(var_data)))
 
         # replace the placeholder in .text with a LEA instruction to the data we written above
-        logger.info("    Datareusefixups: patch code to reference the data")
+        logger.info("    Patch Carrier code to reference the injected data")
         code = self.superpe.get_code_section_data()
         for datareuse_fixup in reusedata_fixups:
             ref: DataReuseReference

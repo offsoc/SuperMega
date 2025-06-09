@@ -30,6 +30,10 @@ def create_c_from_template(settings: Settings, payload_len: int):
 
     logger.info("-[ Carrier create Template: {}".format(
         settings.main_c_path))
+    
+    # check that source directory exists
+    if not os.path.exists(src):
+        raise FileNotFoundError("Source directory does not exist: {}".format(src))
 
     # copy *.c *.h files from src directory to dst directory
     for file in os.listdir(src):

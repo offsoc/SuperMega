@@ -322,7 +322,7 @@ class SuperPe():
         new_name_bytes = new_func_name.encode("ascii") + b'\x00' * (len(func_name) - len(new_func_name))
         
         # Overwrite the name in the file data
-        logger.info("    Patch IAT entry at offset 0x{:X} from {} to {}".format(
+        logger.debug("    Patch IAT entry at offset 0x{:X} from {} to {}".format(
             offset, func_name, new_name_bytes.decode()))
         self.pe.set_bytes_at_offset(offset, new_name_bytes)
 
