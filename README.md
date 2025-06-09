@@ -152,6 +152,26 @@ To inject shellcode `messagebox.bin` into injectable `procexp64.exe` with carrie
 > C:\Users\dobin\Repos\SuperMega>.\projects\commandline\procexp64.infected.exe
 ```
 
+### Execution Guardrails 
+
+You can use the `env` execution guardrail to restriction execution where
+the environment matches your expectations. In the following example, 
+it requires the `VCINSTALLDIR` environment variable to contain 
+`Community`, which matches here. `\2022\Community\VC\`.
+
+```
+> set
+...
+VCINSTALLDIR=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\
+...
+
+> python.exe supermega.py ... --guardrail env --guardrail-key VCIDEInstallDir --guardrail-value Community
+```
+
+These make middleboxes like sandboxes unable to execute and therefore detect
+the payload, as it never gets decrypted. Until they install Visual Studio 2022
+community edition. 
+
 
 ## Directories
 
