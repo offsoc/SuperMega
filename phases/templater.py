@@ -53,9 +53,14 @@ def create_c_from_template(settings: Settings, payload_len: int):
     logger.info("    Carrier AntiEmulation: {}".format(
         settings.plugin_antiemulation)
     )
-    logger.info("    Carrier Guardrail: {}".format(
-        settings.plugin_guardrail)
-    )
+    if settings.plugin_guardrail != "none":
+        logger.info("    Carrier Guardrail: {}  (key: {}  value: {})".format(
+            settings.plugin_guardrail, 
+            settings.plugin_guardrail_data_key,
+            settings.plugin_guardrail_data_value)
+        )
+    else:
+        logger.info("    Carrier Guardrail: none")
     logger.info("    Carrier Decoy: {}".format(
         settings.plugin_decoy)
     )
@@ -75,7 +80,8 @@ def create_c_from_template(settings: Settings, payload_len: int):
     with open(filepath_guardrails, "r", encoding='utf-8') as file:
         plugin_guardrails = file.read()
         plugin_guardrails = Template(plugin_guardrails).render({
-            'guardrail_data': settings.plugin_guardrail_data,
+            'guardrail_data_key': settings.plugin_guardrail_data_key,
+            'guardrail_data_value': settings.plugin_guardrail_data_value,
         })
 
     # Plugin: Decoder

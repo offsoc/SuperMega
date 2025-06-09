@@ -211,7 +211,8 @@ def add_project():
             settings.decoder_style = request.form['decoder_style']
             payload_location = request.form['payload_location']
             settings.payload_location = PayloadLocation[payload_location]
-            settings.plugin_guardrail_data = request.form.get('guardrail_data', settings.plugin_guardrail_data)
+            settings.plugin_guardrail_data_key = request.form.get('guardrail_data_key', settings.plugin_guardrail_data_key)
+            settings.plugin_guardrail_data_value = request.form.get('guardrail_data_value', settings.plugin_guardrail_data_value)
             settings.plugin_virtualprotect = request.form.get('virtualprotect', "standard")
 
             # overwrite project

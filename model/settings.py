@@ -17,7 +17,8 @@ class Settings():
         self.plugin_antiemulation: str = "none"
         self.plugin_decoy: str = "none"
         self.plugin_guardrail: str = "none"
-        self.plugin_guardrail_data: str = "C:\\\\Users\\\\hacker"
+        self.plugin_guardrail_data_key: str = ""
+        self.plugin_guardrail_data_value: str = ""
         self.plugin_virtualprotect: str = "standard"
         self.plugin_virtualprotect_data: str = ""
 

