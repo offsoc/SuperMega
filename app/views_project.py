@@ -89,7 +89,7 @@ def project(name):
         
         has_rodata_section = superpe.has_rodata_section()
         if has_rodata_section:
-            superpe.get_rdata_rangemanager().find_largest_gap()
+            data_sect_largest_gap_size = superpe.get_rdata_rangemanager().find_largest_gap()
         unresolved_dlls = pe.dllresolver.unresolved_dlls(superpe)
 
     project_dir = os.path.dirname(os.getcwd() + "\\" + project.settings.main_dir)
@@ -107,7 +107,6 @@ def project(name):
     decoy_styles = list_files(PATH_DECOY)
     virtualprotect_styles = list_files(PATH_VIRTUALPROTECT)
     decoder_styles = list_files(PATH_DECODER)
-
 
     return render_template('project.html', 
         project_name = name,
@@ -197,8 +196,8 @@ def add_project():
         # update project
         else:
             settings.init_payload_injectable(
-                request.form['shellcode'],
-                request.form['exe'],
+                FilePath(request.form['shellcode']),
+                FilePath(request.form['exe']),
                 request.form.get('dllfunc', "")
             )
 
@@ -213,7 +212,7 @@ def add_project():
             payload_location = request.form['payload_location']
             settings.payload_location = PayloadLocation[payload_location]
             settings.plugin_guardrail_data = request.form.get('guardrail_data', settings.plugin_guardrail_data)
-            settings.plugin_virtualprotect = request.form.get('virtualprotect')
+            settings.plugin_virtualprotect = request.form.get('virtualprotect', "standard")
 
             # overwrite project
             project = storage.get_project(project_name)

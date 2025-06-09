@@ -15,15 +15,29 @@ def check_deps():
     cl = config.get("path_cl")
     if shutil.which(cl) == None:
         logger.error("Missing dependency: " + cl)
-        logger.error("Start in x64 Native Tools Command Prompt for VS 2022")
+        logger.error("See README for fix")
         exit(1)
 
     ml = config.get("path_ml64")
     if shutil.which(ml) == None:
         logger.error("Missing dependency: " + ml)
-        logger.error("Start in x64 Native Tools Command Prompt for VS 2022")
+        logger.error("See README for fix")
         exit(1)
 
+
+def command_exists(cmd):
+    try:
+        # Use the "where" command to check if the command is in the PATH
+        result = subprocess.run(
+            ["where", cmd],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            shell=True
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
+    
 
 def delete_all_files_in_directory(directory_path):
     files = glob.glob(os.path.join(directory_path, '*'))

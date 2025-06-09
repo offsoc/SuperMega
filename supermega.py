@@ -36,9 +36,7 @@ def main():
     parser.add_argument('--antiemulation', type=str, help='anti-emulation: data/source/antiemulation/* (sirallocalot, timeraw, none, ...)', default="sirallocalot")
     parser.add_argument('--fix-iat', action='store_true', help='Fix missing IAT entries in the infectable executable', default=True)
     parser.add_argument('--carrier_invoke', type=str, help='how carrier is started: \"backdoor\" to rewrite call instruction, \"eop\" for entry point', choices=["eop", "backdoor"], default="backdoor")
-    parser.add_argument('--start-injected', action='store_true', help='Dev: Start the generated infected executable at the end')
-    parser.add_argument('--start-loader-shellcode', action='store_true', help='Dev: Start the loader shellcode (without payload)')
-    parser.add_argument('--start-final-shellcode', action='store_true', help='Debug: Start the final shellcode (loader + payload)')
+    parser.add_argument('--start', action='store_true', help='Start the infected executable at the end for testing')
     parser.add_argument('--short-call-patching', action='store_true', help='Debug: Make short calls long. You will know when you need it.')
     parser.add_argument('--no-clean-at-start', action='store_true', help='Debug: Dont remove any temporary files at start')
     parser.add_argument('--no-clean-at-exit', action='store_true', help='Debug: Dont remove any temporary files at exit')
@@ -271,23 +269,5 @@ def verify_shellcode(shc_name):
         return False
     
 
-def command_exists(cmd):
-    try:
-        # Use the "where" command to check if the command is in the PATH
-        result = subprocess.run(
-            ["where", cmd],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            shell=True
-        )
-        return result.returncode == 0
-    except Exception:
-        return False
-    
-
 if __name__ == "__main__":
-    if not command_exists("cl.exe"):
-        logger.error("cl.exe not found in PATH. Please install Visual Studio Build Tools.")
-        logger.error("And start this in Developer Command prompt.")
-        exit(1)
     main()
