@@ -22,7 +22,7 @@ def compile_dev(
     asm_out: FilePath,
     short_call_patching: bool = False,
 ):
-    logger.info("-( Compile C to ASM: {} -> {} ".format(c_in, asm_out))
+    logger.info("-( Carrier: Compile C to ASM: {} -> {} ".format(c_in, asm_out))
 
     # Compile C To Assembly (text)
     run_process_checkret([
@@ -39,8 +39,10 @@ def compile_dev(
     asm_text: str = file_readall_text(asm_out)
     observer.add_text_file("carrier_asm_orig", asm_text)
 
-    logger.info("---[ ASM masm_shc: {} ".format(asm_out))
-    asm_text_lines: List[str] = parse_asm_text_file(Carrier(), asm_text)
+    logger.info("      ASM masm_shc: {} ".format(asm_out))
+    settings = Settings()
+    injectable = Injectable("test.exe")  # ???
+    asm_text_lines: List[str] = parse_asm_text_file(injectable, asm_text, settings)
     asm_text = masm_shc(asm_text_lines)
     observer.add_text_file("carrier_asm_cleanup", asm_text)
 
@@ -54,7 +56,8 @@ def compile(
     injectable: Injectable,
     settings: Settings,
 ):
-    logger.info("-[ Compile C to ASM: {} -> {} ".format(c_in, asm_out))
+    logger.info("-[ Carrier: Compile C to ASM".format())
+    logger.info("    Carrier: {} -> {} ".format(c_in, asm_out))
 
     # Compile C To Assembly (text)
     run_process_checkret([

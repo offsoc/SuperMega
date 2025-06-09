@@ -23,9 +23,38 @@ def get_template_names() -> List[str]:
 
 
 def create_c_from_template(settings: Settings, payload_len: int):
-    logger.info("-[ Create C from template: {} -> {}".format(
-        PATH_DECODER, settings.main_c_path))
     plugin_decoder = ""
+
+    src = "{}{}/".format(PATH_CARRIER, settings.carrier_name)
+    dst = "{}{}/".format(PATH_WEB_PROJECT, settings.project_name)
+
+    logger.info("-[ Carrier create Template: {}".format(
+        settings.main_c_path))
+
+    # copy *.c *.h files from src directory to dst directory
+    for file in os.listdir(src):
+        if file.endswith(".c") or file.endswith(".h"):
+            logger.debug("    Copy {} to {}".format(src + file, dst))
+            shutil.copy2(src + file, dst)
+
+    logger.info("    Carrier: {}".format(
+        settings.carrier_name))
+    logger.info("    Carrier: Code into: {}".format(
+        settings.payload_location.value))
+    logger.info("    Carrier: Decoder: {}".format(
+        settings.decoder_style))
+    logger.info("    Carrier: Invoker: {}".format(
+        settings.carrier_invoke_style.value))
+
+    logger.info("    Carrier AntiEmulation: {}".format(
+        settings.plugin_antiemulation)
+    )
+    logger.info("    Carrier Guardrail: {}".format(
+        settings.plugin_guardrail)
+    )
+    logger.info("    Carrier Decoy: {}".format(
+        settings.plugin_decoy)
+    )
 
     # Plugin: VirtualAlloc
     filepath_virtualprotect = PATH_VIRTUALPROTECT + "{}.c".format(

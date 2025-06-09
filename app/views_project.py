@@ -19,7 +19,7 @@ from app.storage import storage, WebProject
 from sender import scannerDetectsBytes
 from phases.injector import verify_injected_exe
 from phases.templater import get_template_names
-from helper import run_process_checkret, run_exe
+from helper import run_exe
 from model.project import prepare_project
 from pe.superpe import SuperPe 
 import pe.dllresolver
@@ -280,10 +280,10 @@ def start_project(project_name):
     if no_exec_arg == "true":
         no_exec = True
 
-    logger.info("--[ Exec project: {} remote: {} no_exec: {}".format(project_name, remote, no_exec))
+    logger.info("    Exec project: {} remote: {} no_exec: {}".format(project_name, remote, no_exec))
 
     if remote:
-        logger.info("--[ Exec {} on server {}".format(project.settings.inject_exe_out, config.get("avred_server")))
+        logger.info("    Exec {} on server {}".format(project.settings.inject_exe_out, config.get("avred_server")))
         with open(project.settings.inject_exe_out, "rb") as f:
             data = f.read()
         filename = os.path.basename(project.settings.inject_exe_out)
@@ -301,13 +301,13 @@ def start_project(project_name):
     else:
         # Start/verify it at the end
         if project.settings.verify:
-            logger.info("--[ Verify infected exe")
+            logger.info("    Verify infected exe")
             exit_code = verify_injected_exe(project.settings.inject_exe_out)
         elif no_exec == False:
             run_exe(project.settings.inject_exe_out, dllfunc=project.settings.dllfunc, check=False)
         elif no_exec == True:
             dirname = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
-            logger.info("--[ Open folder: {}".format(dirname))
+            logger.info("    Open folder: {}".format(dirname))
             subprocess.run(['explorer', dirname])
 
     return redirect("/project/{}".format(project_name), code=302)

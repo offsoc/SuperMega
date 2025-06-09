@@ -40,6 +40,8 @@ def prepare_project(project_name, settings):
     src = "{}{}/".format(PATH_CARRIER, settings.carrier_name)
     dst = "{}{}/".format(PATH_WEB_PROJECT, project_name)
 
+    logger.info("-[ Cleanup project: {}".format(project_name))
+
     if not os.path.exists(dst):
         os.makedirs(dst)
 
@@ -59,9 +61,3 @@ def prepare_project(project_name, settings):
                 continue
 
         os.remove(dst + file)
-
-    # copy *.c *.h files from src directory to dst directory
-    for file in os.listdir(src):
-        if file.endswith(".c") or file.endswith(".h"):
-            logger.info("--( Copy {} to {}".format(src + file, dst))
-            shutil.copy2(src + file, dst)

@@ -53,7 +53,6 @@ def main():
     else:
         setup_logging(logging.INFO)
 
-
     settings.try_start_final_infected_exe = args.start_injected
     settings.cleanup_files_on_start = not args.no_clean_at_start
     settings.cleanup_files_on_exit =not args.no_clean_at_exit
@@ -146,18 +145,6 @@ def start_real(settings: Settings):
     if not project.injectable.superpe.is_64():
         raise Exception("Binary is not 64bit: {}".format(project.settings.inject_exe_in))
 
-    logger.info("--[ Config:  {}  {}  {}  {}".format(
-        project.settings.carrier_name, 
-        settings.payload_location.value,
-        project.settings.decoder_style,
-        project.settings.carrier_invoke_style.value))
-
-    logger.info("--[ Plugins: AntiEmulation={}  Decoy={}  Guardrail={}".format(
-        project.settings.plugin_antiemulation,
-        project.settings.plugin_decoy,
-        project.settings.plugin_guardrail)
-    )
-
     # Tell user if they attempt to do something stupid
     sanity_checks(project.settings)
 
@@ -184,11 +171,15 @@ def start_real(settings: Settings):
 
     # COMPILE: Carrier to .asm (C -> ASM)
     if settings.generate_asm_from_c:
-        phases.compiler.compile(
-            c_in = settings.main_c_path, 
-            asm_out = settings.main_asm_path,
-            injectable = project.injectable,
-            settings = project.settings)
+        try:
+            phases.compiler.compile(
+                c_in = settings.main_c_path, 
+                asm_out = settings.main_asm_path,
+                injectable = project.injectable,
+                settings = project.settings)
+        except ChildProcessError as e:
+            logger.error("Error compiling C to ASM: {}".format(e))
+            return
         
     # we have the carrier-required IAT entries in carrier.iat_requests
     # CHECK if all are available in infectable, or abort (early check)
@@ -204,9 +195,6 @@ def start_real(settings: Settings):
         asm_in = settings.main_asm_path, 
         build_exe = settings.main_exe_path)
     observer.add_code_file("carrier_shc", carrier_shellcode)
-    logging.info("> Carrier Size: {}   Payload Size: {}".format(
-        len(carrier_shellcode), len(project.payload.payload_data)
-    ))
 
     # INJECT loader into an exe and do IAT & data references. Big task.
     injector = phases.injector.Injector(
@@ -228,7 +216,7 @@ def start_real(settings: Settings):
     else:
         # Support automated verification (dev)
         if settings.verify:
-            logger.info("--[ Verify infected exe")
+            logger.info("    Verify infected exe")
             payload_exit_code = phases.injector.verify_injected_exe(
                 settings.inject_exe_out,
                 dllfunc=settings.dllfunc)
@@ -239,7 +227,7 @@ def start_real(settings: Settings):
 
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):
-    logger.info("--[ Obfuscate shellcode with SGN")
+    logger.info("    Obfuscate shellcode with SGN")
     run_process_checkret([
         config.get("path_sgn"),
         "--arch=64",
@@ -255,7 +243,7 @@ def obfuscate_shc_loader(file_shc_in, file_shc_out):
 
 
 def verify_shellcode(shc_name):
-    logger.info("---[ Verify shellcode: {}".format(shc_name))
+    logger.info("      Verify shellcode: {}".format(shc_name))
 
     # check if directory exists
     if not os.path.exists(os.path.dirname(VerifyFilename)):

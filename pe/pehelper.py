@@ -57,7 +57,7 @@ def extract_code_from_exe_file(exe_file: FilePath) -> bytes:
     section = get_code_section(pe)
     data: bytes = section.get_data()
     data = remove_trailing_null_bytes(data)
-    logger.debug("---[ Extract code section size: {} / {}".format(
+    logger.debug("      Extract code section size: {} / {}".format(
         len(data), section.Misc_VirtualSize))
     pe.close()
     return data

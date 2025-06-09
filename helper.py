@@ -37,8 +37,6 @@ def clean_tmp_files():
 
 
 def clean_files(settings):
-    logger.info("--( Remove old files")
-
     files_to_clean = [
         # temporary files
         settings.main_c_path,
@@ -56,8 +54,8 @@ def run_exe(exefile, dllfunc="", check=True):
     if exefile.endswith(".dll"):
         if dllfunc == "":
             dllfunc = "dllMain"
-            logger.info("---[ No DLL function specified, using default: {}".format(dllfunc))
-            #raise Exception("---[ No DLL function specified")
+            logger.info("      No DLL function specified, using default: {}".format(dllfunc))
+            #raise Exception("      No DLL function specified")
         args = [ "rundll32.exe", "{},{}".format(exefile, dllfunc) ]
     elif exefile.endswith(".exe"):
         args = [ exefile ]
@@ -97,8 +95,10 @@ def run_process_checkret(args, check=True):
 
     # check return code (optional)
     if ret.returncode != 0 and check:
-        logger.info("----! FAILED Command: {}".format(" ".join(args)))
-        raise Exception("Command failed: " + " ".join(args))
+        logger.error("----! FAILED Command: {}".format(" ".join(args)))
+        logger.warning("----! Stdout:\n {}".format(stdout_s))
+        logger.warning("----! Stderr:\n {}".format(stderr_s))
+        raise ChildProcessError("Command failed: " + " ".join(args))
     
     # debug: show command output
     if config.ShowCommandOutput:
@@ -108,7 +108,7 @@ def run_process_checkret(args, check=True):
 
 
 def try_start_shellcode(shc_file):
-    logger.info("--[ Blindly execute shellcode: {}".format(shc_file))
+    logger.info("    Blindly execute shellcode: {}".format(shc_file))
     subprocess.run([
         config.get("path_runshc"),
         shc_file,

