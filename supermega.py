@@ -204,10 +204,10 @@ def start_real(settings: Settings) -> bool:
     # CHECK if all are available in infectable, or abort (early check)
     functions = project.injectable.get_unresolved_iat()
     if len(functions) != 0 and settings.fix_missing_iat == False:
-        logging.error("IAT entries not found in infectable: {}".format(", ".join(functions)))
-        logging.error("The carrier depends on these functions, but they are not available in the infectable exe.")
-        logging.error("Use another infectable exe, or update the carrier to not depend on these functions.")
-        logging.error(" or dont use --no-fix-iat")
+        logger.error("IAT entries not found in infectable: {}".format(", ".join(functions)))
+        logger.error("The carrier depends on these functions, but they are not available in the infectable exe.")
+        logger.error("Use another infectable exe, or update the carrier to not depend on these functions.")
+        logger.error(" or dont use --no-fix-iat")
         return False
 
     # ASSEMBLE: Assemble .asm to .shc (ASM -> SHC)

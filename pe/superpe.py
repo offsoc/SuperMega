@@ -344,7 +344,7 @@ class SuperPe():
             if string_off == None:
                 raise Exception("Strings not found in .rdata section, abort")
             if string_off < 128:
-                logging.debug("weird: Strings in .rdata section at offset {} < 100".format(string_off))
+                logger.debug("weird: Strings in .rdata section at offset {} < 100".format(string_off))
                 string_off = 128
             rm.add_range(section.virt_addr, section.virt_addr + string_off)
         

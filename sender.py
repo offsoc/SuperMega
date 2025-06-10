@@ -11,7 +11,7 @@ logger = logging.getLogger("Sender")
 
 def scannerDetectsBytes(data: bytes, filename: str, useBrotli=True, verify=False, no_exec=False):
     if config.get("avred_server") == "":
-        logging.error("No AVRed server configured, aborting")
+        logger.error("No AVRed server configured, aborting")
         return
     params = { 'filename': filename, 'brotli': useBrotli, 'verify': verify, 'no_exec' : no_exec}
     
@@ -30,7 +30,7 @@ def scannerDetectsBytes(data: bytes, filename: str, useBrotli=True, verify=False
 
     # basically internal server error, e.g. AMSI not working
     if res.status_code != 200:
-        logging.error("Error Code {}: {}".format(res.status_code, res.text))
+        logger.error("Error Code {}: {}".format(res.status_code, res.text))
         raise Exception("Server error, aborting")
     
     return jsonRes

@@ -23,7 +23,7 @@ def asm_to_shellcode(asm_in: FilePath, build_exe: FilePath) -> bytes:
     if not os.path.isfile(build_exe):
         raise Exception("Compiling failed")
     code = extract_code_from_exe_file(build_exe)
-    logging.info("    Carrier Size: {}".format(
+    logger.info("    Carrier Size: {}".format(
         len(code)
     ))
     return code

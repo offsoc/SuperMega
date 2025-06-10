@@ -284,7 +284,7 @@ class Injector():
                 if payload_rva == None:
                     raise Exception("DataReuseFixup: payload_rva is None")
                 datareuse_fixup.addr = payload_rva + self.injectable.superpe.get_image_base()
-                logging.debug("        Add to .text at 0x{:X} ({}): {} with size {}".format(
+                logger.debug("        Add to .text at 0x{:X} ({}): {} with size {}".format(
                     datareuse_fixup.addr, payload_rva, datareuse_fixup.string_ref, len(datareuse_fixup.data)))
 
             else:  # .rdata
@@ -301,7 +301,7 @@ class Injector():
                 self.superpe.pe.set_bytes_at_rva(data_rva, var_data)
                 datareuse_fixup.addr = data_rva + self.injectable.superpe.get_image_base()
                 ##
-                logging.debug("        Add to .rdata at 0x{:X} ({}): {}: {}".format(
+                logger.debug("        Add to .rdata at 0x{:X} ({}): {}: {}".format(
                     datareuse_fixup.addr, data_rva, datareuse_fixup.string_ref, ui_string_decode(var_data)))
 
         # replace the placeholder in .text with a LEA instruction to the data we written above

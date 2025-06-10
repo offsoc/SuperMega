@@ -104,11 +104,11 @@ def create_c_from_template(settings: Settings, payload_len: int):
         max_alloc_count = 256
         if sir_alloc_count > max_alloc_count:
             # if too large, compiler will add a __checkstk dependency
-            logging.warning("Too large sir allocation count {}, setting to max {}".format(
+            logger.warning("Too large sir allocation count {}, setting to max {}".format(
                 sir_alloc_count, max_alloc_count
             ))
             sir_alloc_count = max_alloc_count
-        logging.debug("-( AntiEmulation settings: iterations: {}  allocs: {}".format(
+        logger.debug("-( AntiEmulation settings: iterations: {}  allocs: {}".format(
             sir_iteration_count, sir_alloc_count)
         )
         plugin_antiemualation = file.read()
