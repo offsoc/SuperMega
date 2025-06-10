@@ -8,9 +8,10 @@
 
 ## What
 
-SuperMega is a shellcode loader by injecting it into genuine executables (.exe or .dll). 
+SuperMega is a shellcode loader. By injecting the payload shellcode into a 
+genuine executables (.exe or .dll). 
 
-The loader shellcode will be tightly integrated into the .exe so that static analysis
+The loader/carrier shellcode will be tightly integrated into the .exe so that static analysis
 has a hard time to spot that the exe is infected. Static analysis will just see
 the genuine exe artefacts. 
 
@@ -22,12 +23,9 @@ Features:
 * Execution guardrails, so payload is only decrypted on target
 * Anti emulation, against AV emulators detecting the payload in memory
 * EDR deconditioner, against EDR memory scan
-* Keep all original properties of the executable (imports, metadata etc.)
-* Very small carrier loader
-* Code execution with main function hijacking
-* No PEB walk, reuses IAT to execute windows api functions
-* Inject data into .rdata for the carrier shellcode
-* Patch IAT for missing functions for the carrier
+* Keep all original properties of the executable (imports, metadata etc.) against heuristics
+* Code execution with main function hijacking against static analysis
+* Carrier doesnt do PEB walk, reuses IAT to execute windows api functions (Cordyceps technique)
 
 References: 
 * [Slides](https://docs.google.com/presentation/d/1_gwd0M49ObHZO5JtrkZl1NPwRKXWVRm_zHTDdGqRl3Q/edit?usp=sharing) HITB2024 BKK "My first and last shellcode loader"
@@ -175,30 +173,36 @@ community edition.
 
 ## Directories
 
-* `data/binary/shellcodes`: Input: Shellcodes we want to use as input (payload)
-* `data/binary/exes/`: Input: Nonmalicious EXE files we inject into
-* `data/source/carrier`: Input: Carrier C templates
+Input: 
+* `data/binary/shellcodes`: Input: Shellcodes we want to use as input (payload). .bin
+* `data/binary/exes/`: Input: Nonmalicious EXE files we inject into. .exe
+
+Output:
 * `projects/<projectname>`: output: Project directory with generated files, including infected exe
 * `projects/default`: output: Project directory with all files from web
 * `projects/commandline`: output: Project directory with all files from commandline
 
+Modifiable:
+* `data/source/carrier`: The thing which actually decodes and executes the payload (alloc_rw_rx, alloc_rx_rwx, ...)
+* `data/source/antiemulation`: Different implementation to make AV emulator give up (sirallocalot, timeraw, ...)
+* `data/source/decoder`: Decryption of the payload (xor, xor2)
+* `data/source/guardrails`: Execution guardrails example (env)
+* `data/source/virtualprotect`: Some fun with virtualprotect
+
 
 ## Installation
 
-VS2022 compilers.
-
-Required:
+VS2022 compiler is required:
 * `ml64.exe`
 * `cl.exe`
-
-Optional: 
-* `r2.exe`
 
 And the python packages:
 ```
 > pip.exe install -r requirements.txt
 ```
 
+Optional: 
+* `r2.exe`
 
 ### VS2022 Components
 
