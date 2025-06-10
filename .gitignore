@@ -9,7 +9,11 @@ data/source/payload/
 
 log-*
 *.verify.exe
+*.verify.dll
 *.infected.exe
 projects/*
 *.test.exe
 data/binary/exes/*
+
+main.obj
+mlink$.lnk

@@ -125,14 +125,14 @@ class Injector():
 
         # Special case: DLL exported function direct overwrite
         if self.superpe.is_dll() and self.settings.dllfunc != "" and carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-            logger.warning("      Inject DLL: Overwrite exported function {} with shellcode".format(self.settings.dllfunc))
+            logger.info("      Inject DLL: Overwrite exported function {} with shellcode".format(self.settings.dllfunc))
             rva = self.superpe.getExportEntryPoint(self.settings.dllfunc)
 
             # Size and sanity checks
             function_size = self.superpe.get_size_of_exported_function(self.settings.dllfunc)
             if carrier_shc_len >= function_size:
-                logger.warning("Shellcode larger than function: {} > {} exported function {}".format(
-                    carrier_shc_len, function_size, self.settings.dllfunc
+                logger.warning("        Oups, Shellcode larger than function {}: {} > {}. Continue anyway.".format(
+                    self.settings.dllfunc, carrier_shc_len, function_size
                 ))
 
             # Inject

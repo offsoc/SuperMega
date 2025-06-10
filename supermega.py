@@ -116,11 +116,12 @@ def start(settings: Settings) -> int:
     prepare_project(settings.project_name, settings)
 
     # Do the thing and catch the errors
+    ret = False
     if config.catch_exception:
-        start_real(settings)
+        ret = start_real(settings)
     else:
         try:
-            start_real(settings)
+            ret = start_real(settings)
         except Exception as e:
             logger.error(f'Error compiling: {e}')
             observer.write_logs(settings.main_dir)
@@ -133,7 +134,7 @@ def start(settings: Settings) -> int:
 
     # Write logs (on success)
     observer.write_logs(settings.main_dir)
-    return 0
+    return ret
 
 
 def sanity_checks(settings):
@@ -221,8 +222,11 @@ def start_real(settings: Settings) -> bool:
         project.payload,
         project.injectable,
         settings)
-         
-    injector.inject_exe()
+
+    try:         
+        injector.inject_exe()
+    except Exception as e:
+        return False
     #observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
     # Check binary with avred
