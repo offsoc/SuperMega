@@ -33,7 +33,7 @@ class Injector():
 
         # superpe is a representation of the exe file. We gonna modify it, and save it at the end.
         # reuse from injectable
-        #self.superpe = SuperPe(settings.inject_exe_in)
+        #self.superpe = SuperPe(settings.get_inject_exe_in())
         self.superpe = injectable.superpe
         self.function_backdoorer = FunctionBackdoorer(self.superpe)
 
@@ -110,8 +110,8 @@ class Injector():
     ## Inject
 
     def inject_exe(self):
-        exe_in = self.settings.inject_exe_in
-        exe_out = self.settings.inject_exe_out
+        exe_in = self.settings.get_inject_exe_in()
+        exe_out = self.settings.get_inject_exe_out()
         carrier_invoke_style: CarrierInvokeStyle = self.settings.carrier_invoke_style
 
         logger.info("-[ Injecting Carrier".format())

@@ -15,7 +15,8 @@ from config import config
 from model.settings import Settings
 from model.defs import *
 from supermega import start
-from app.storage import storage, WebProject
+from app.storage import storage
+from model.project import Project
 from sender import scannerDetectsBytes
 from phases.injector import verify_injected_exe
 from phases.templater import get_template_names
@@ -36,19 +37,21 @@ thread_running = False
 
 @views_project.route("/projects")
 def projects_route():
-    projects = storage.get_projects()
-    return render_template('projects.html', projects=projects)
+    projects_settings = storage.get_project_settings()
+    return render_template('projects.html', projects_settings=projects_settings)
 
 
 @views_project.route("/project/<name>")
 def project(name):
-    project = storage.get_project(name)
-    if project == None:
+    project_setting = storage.get_project_setting(name)
+    if project_setting == None:
+        logger.error("Project {} not found".format(name))
         return redirect("/projects", code=302)
     
-    exe_path = project.settings.inject_exe_out
+    project_setting.print()
+    
     is_built = False
-    if os.path.exists(exe_path):
+    if os.path.exists(project_setting.project_exe_path):
         is_built = True
 
     exports = []
@@ -65,16 +68,16 @@ def project(name):
     if config.get("avred_server") != "":
         has_remote = True
 
-    # when we select a shellcode
-    if project.settings.payload_path != "":
-        payload_len = os.path.getsize(project.settings.payload_path)
+    # payload / shellcode
+    if project_setting.get_payload_path() != None:
+        payload_len = os.path.getsize(project_setting.get_payload_path())
 
-    # when we selected an input file
-    if project.settings.inject_exe_in != "" and os.path.exists(project.settings.inject_exe_in):
-        superpe = SuperPe(project.settings.inject_exe_in)
+    # injectable / exe
+    if project_setting.get_inject_exe_in() != None and os.path.exists(project_setting.get_inject_exe_in()):
+        superpe = SuperPe(project_setting.get_inject_exe_in())
         #if not superpe.is_64():
         #    # return 500
-        #    return "Error: Binary {} is not 64bit".format(project.settings.inject_exe_in), 500
+        #    return "Error: Binary {} is not 64bit".format(project.settings.get_inject_exe_in()), 500
 
         is_64 = superpe.is_64()
         is_dotnet = superpe.is_dotnet()
@@ -85,17 +88,17 @@ def project(name):
         if rdata_section != None:
             data_sect_size = rdata_section.virt_size
         else:
-            logger.warning("No .rdata section found in {}".format(project.settings.inject_exe_in))
+            logger.warning("No .rdata section found in {}".format(project_setting.get_inject_exe_in()))
         
         has_rodata_section = superpe.has_rodata_section()
         if has_rodata_section:
             data_sect_largest_gap_size = superpe.get_rdata_rangemanager().find_largest_gap()
         unresolved_dlls = pe.dllresolver.unresolved_dlls(superpe)
 
-    project_dir = os.path.dirname(os.getcwd() + "\\" + project.settings.main_dir)
-    log_files = get_logfiles(project.settings.main_dir)
-    exes = list_files_and_sizes(PATH_EXES, prepend=PATH_EXES)
-    exes += list_files_and_sizes(PATH_EXES_MORE, prepend=PATH_EXES_MORE)
+    project_dir = os.path.dirname(os.getcwd() + "\\" + project_setting.project_path)
+    log_files = get_logfiles(project_setting.project_path)
+    exes = list_files_and_sizes(PATH_EXES)
+    #exes += list_files_and_sizes(PATH_EXES_MORE, prepend=PATH_EXES_MORE)
     shellcodes = list_files_and_sizes(PATH_SHELLCODES)
 
     carrier_names = get_template_names()
@@ -110,9 +113,10 @@ def project(name):
 
     return render_template('project.html', 
         project_name = name,
-        project=project, 
+        project_comment = project_setting.project_comment,
         is_built=is_built,
         project_dir=project_dir,
+        settings=project_setting,
         
         exes=exes,
         shellcodes=shellcodes,
@@ -133,7 +137,7 @@ def project(name):
         has_rodata_section=has_rodata_section,
 
         has_remote=has_remote,
-        fix_missing_iat=project.settings.fix_missing_iat,
+        fix_missing_iat=project_setting.fix_missing_iat,
 
         guardrailstyles = guardrail_styles,
         antiemulationstyles = antiemulation_styles,
@@ -170,18 +174,17 @@ def list_files(directory, prepend="") -> List[str]:
 def add_project():
     if request.method == 'POST':
         project_name = request.form['project_name']
-
-        settings = Settings(project_name)
         comment = request.form['comment']
 
+        # Empty settings, except name
+        settings = Settings(project_name)
+
         # new project?
-        if storage.get_project(project_name) == None:
-            # Default values for web create
-            settings.init_payload_injectable(
-                FilePath("messagebox.bin"),
-                FilePath("data/binary/exes/procexp64.exe"),
-                ""
-            )
+        if storage.get_project_setting(project_name) == None:
+            # Sane defaults for web
+            settings.injectable_base = "7z.exe"
+            settings.payload_base = "calc64.bin"
+
             settings.decoder_style = "xor_2"
             settings.carrier_name = "alloc_rw_rx"
             settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
@@ -189,17 +192,20 @@ def add_project():
             settings.fix_missing_iat = True
 
             # add new project
-            project = WebProject(project_name, settings)
-            project.comment = comment
-            storage.add_project(project)
+            settings.project_comment = comment
+            storage.add_project_setting(settings)
         
         # update project
         else:
-            settings.init_payload_injectable(
-                FilePath(request.form['shellcode']),
-                FilePath(request.form['exe']),
-                request.form.get('dllfunc', "")
-            )
+            logger.info("Update project: {}".format(project_name))
+
+            shellcode_file = request.form['shellcode']
+            injectable_file = request.form['exe']
+            dll_func = request.form.get('dllfunc', "")
+
+            settings.injectable_base = injectable_file
+            settings.payload_base = shellcode_file
+            settings.dllfunc = dll_func
 
             settings.fix_missing_iat = True if request.form.get('fix_missing_iat') != None else False
             settings.carrier_name = request.form['carrier_name']
@@ -216,10 +222,8 @@ def add_project():
             settings.plugin_virtualprotect = request.form.get('virtualprotect', "standard")
 
             # overwrite project
-            project = storage.get_project(project_name)
-            project.settings = settings
-            project.comment = comment
-            storage.save_project(project)
+            #settings = storage.get_project(project_name)
+            storage.save_project_settings(settings)
 
         return redirect("/project/{}".format(project_name), code=302)
     
@@ -237,14 +241,18 @@ def supermega_thread(settings: Settings):
 def build_project(project_name):
     global thread_running
 
-    project = storage.get_project(project_name)
+    project_settings = storage.get_project_setting(project_name)
+    if project_settings == None:
+        logger.error("Project {} not found".format(project_name))
+        return redirect("/projects", code=302)
 
-    #if project.settings.inject_exe_in.endswith(".dll"):
+    #if project.settings.get_inject_exe_in().endswith(".dll"):
     #    if project.settings.dllfunc == "":
     #        logger.error("DLL injection requires a DLL function name")
     #        return redirect("/project/{}".format(project_name), code=302)
 
-    project.settings.try_start_final_infected_exe = False
+    project_settings.try_start_final_infected_exe = False
+    project = Project(project_settings)
     prepare_project(project_name, project.settings)
     thread = Thread(target=supermega_thread, args=(project.settings, ))
     thread.start()
@@ -266,9 +274,14 @@ def status_project(project_name):
 
 @views_project.route("/project/<project_name>/exec", methods=['POST', 'GET'])
 def start_project(project_name):
-    project = storage.get_project(project_name)
-    if project == None:
+    project_settings = storage.get_project_setting(project_name)
+    if project_settings == None:
         return redirect("/", code=302)
+    
+    project = Project(project_settings)
+    if not project.init():
+        logger.error("Project {} could not be initialized".format(project_name))
+        return redirect("/project/{}".format(project_name), code=302)
 
     remote = False
     remote_arg = request.args.get('remote')
@@ -283,10 +296,10 @@ def start_project(project_name):
     logger.info("    Exec project: {} remote: {} no_exec: {}".format(project_name, remote, no_exec))
 
     if remote:
-        logger.info("    Exec {} on server {}".format(project.settings.inject_exe_out, config.get("avred_server")))
-        with open(project.settings.inject_exe_out, "rb") as f:
+        logger.info("    Exec {} on server {}".format(project.settings.get_inject_exe_out(), config.get("avred_server")))
+        with open(project.settings.get_inject_exe_out(), "rb") as f:
             data = f.read()
-        filename = os.path.basename(project.settings.inject_exe_out)
+        filename = os.path.basename(project.settings.get_inject_exe_out())
         try:
             scannerDetectsBytes(data, 
                                 filename, 
@@ -302,11 +315,11 @@ def start_project(project_name):
         # Start/verify it at the end
         if project.settings.verify:
             logger.info("    Verify infected exe")
-            exit_code = verify_injected_exe(project.settings.inject_exe_out)
+            exit_code = verify_injected_exe(project.settings.get_inject_exe_out())
         elif no_exec == False:
-            run_exe(project.settings.inject_exe_out, dllfunc=project.settings.dllfunc, check=False)
+            run_exe(project.settings.get_inject_exe_out(), dllfunc=project.settings.dllfunc, check=False)
         elif no_exec == True:
-            dirname = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
+            dirname = os.path.dirname(os.path.abspath(project.settings.get_inject_exe_out()))
             logger.info("    Open folder: {}".format(dirname))
             subprocess.run(['explorer', dirname])
 

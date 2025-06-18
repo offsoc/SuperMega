@@ -4,16 +4,19 @@ bak/
 tools/
 doc/
 
+projects/*
+!projects/default/
+!projects/default/**
+
 data/binary/exes_more/
 data/source/payload/
+data/binary/exes/*
 
 log-*
 *.verify.exe
 *.verify.dll
 *.infected.exe
-projects/*
 *.test.exe
-data/binary/exes/*
 
 main.obj
 mlink$.lnk

@@ -15,6 +15,7 @@ logger = logging.getLogger("Views")
 @views.route("/")
 def index():
     return render_template('index.html')
+    return redirect("/project/default", code=302)
 
 
 @views.route("/exes/<exe_name>")

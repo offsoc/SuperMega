@@ -13,14 +13,13 @@ PATH_EXES_MORE = "data/binary/exes_more/"
 PATH_DLLS = "data/binary/dlls/"
 PATH_SHELLCODES = "data/binary/shellcodes/"
 PATH_CARRIER = "data/source/carrier/"
-PATH_PAYLOAD = "data/source/payload/"
-
 PATH_DECODER = "data/source/decoder/"
 PATH_ANTIEMULATION = "data/source/antiemulation/"
 PATH_DECOY = "data/source/decoy/"
 PATH_GUARDRAILS = "data/source/guardrails/"
 PATH_VIRTUALPROTECT = "data/source/virtualprotect/"
 
+PATH_PAYLOAD = "data/source/payload/"
 PATH_WEB_PROJECT = "projects/"
 
 

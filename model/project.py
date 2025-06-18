@@ -1,5 +1,4 @@
 import logging
-import shutil
 
 from model.defs import *
 from model.payload import Payload
@@ -9,31 +8,32 @@ from model.injectable import Injectable
 logger = logging.getLogger("Project")
 
 
-class WebProject():
-    def __init__(self, name: str, settings: Settings):
-        self.name = name
-        self.settings: Settings = settings
-        self.comment: str = ""
-
-
 class Project():
     def __init__(self, settings: Settings):
-        self.name: str = ""
-        self.comment: str = ""
         self.settings: Settings = settings
-        self.payload: Payload = Payload(self.settings.payload_path)
-        self.injectable: Injectable = Injectable(self.settings.inject_exe_in)
 
-        self.project_dir: str = ""
-        self.project_exe: str = ""
+        # Set by init()
+        self.payload: Payload
+        self.injectable: Injectable
 
 
     def init(self) -> bool:
+        self.payload: Payload = Payload(self.settings.get_payload_path())
+        self.injectable: Injectable = Injectable(self.settings.get_inject_exe_in())
+
         if not self.payload.init():
             return False
         if not self.injectable.init():
             return False
         return True
+    
+    
+    def print(self):
+        logger.info("Project Name: {}".format(self.settings.project_name))
+        logger.info("Comment: {}".format(self.settings.project_comment))
+        logger.info("Settings: {}".format(self.settings.__dict__))
+        logger.info("Payload Path: {}".format(self.payload.payload_path))
+        logger.info("Injectable Path: {}".format(self.injectable.exe_filepath))
 
 
 def prepare_project(project_name, settings):

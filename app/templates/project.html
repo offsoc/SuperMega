@@ -45,7 +45,7 @@
                     onchange="this.form.submit()" readonly>
 
                 <input type="text" name="comment" class="hidden form-control" 
-                    placeholder="" value="{{project.comment}}"
+                    placeholder="" value="{{project_comment}}"
                     aria-label="PROJECTNAME" aria-describedby="basic-addon1"
                     onchange="this.form.submit()">
 
@@ -63,7 +63,7 @@
                                 aria-label="SHELLCODE" onchange="this.form.submit()">
                             {% for shellcode in shellcodes %}
                             <option value="{{shellcode['filename']}}" 
-                                    {% if shellcode["filename"] in project.settings.payload_path %} selected {% endif %}
+                                    {% if shellcode["filename"] == settings.payload_base %} selected {% endif %}
                             >
                                 {{shellcode['filename']}} ({{shellcode['size']}})
                             </option>
@@ -71,7 +71,7 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <!-- Input: EXE File -->
                 <div class="form-group row">
                     <label for="exe" class="col-sm-3 col-form-label"
@@ -85,7 +85,7 @@
                                 aria-label="EXE" onchange="this.form.submit()">
                             {% for exe in exes %}
                             <option value="{{exe['filename']}}"
-                                {% if exe['filename'] == project.settings.inject_exe_in %} selected {% endif %}
+                                {% if exe['filename'] == settings.injectable_base %} selected {% endif %}
                             >
                             {{exe['filename'] | basename}} ({{exe['size']}})</option>
                             {% endfor %}
@@ -98,7 +98,7 @@
                 <select class="form-select" name="dllfunc" aria-label="DLLFUNC" onchange="this.form.submit()">
                     {% for export in exports %}
                     <option value="{{export['name']}}"
-                        {% if export["name"] == project.settings.dllfunc %} selected {% endif %}
+                        {% if export["name"] == settings.dllfunc %} selected {% endif %}
                     >
                     {{export['name']}} ({{export['size']}})</option>
                     {% endfor %}
@@ -108,7 +108,7 @@
 
             <!-- Row 3: exe and shellcode info -->
             <div class="col-2">
-                <a href="/exes/{{project.settings.inject_exe_in | basename}}">EXE Info:</a>
+                <a href="/exes/{{settings.get_inject_exe_in() | basename}}">EXE Info:</a>
                 <ul>
                     <li>
                         {% if is_64 %}
@@ -154,11 +154,11 @@
             <div class="col-3">
                 <div class="form-group row">
                     <label for="carrier_name" class="col-sm-5 col-form-label
-                    {% if 'rwx' in project.settings.carrier_name %}
+                    {% if 'rwx' in settings.carrier_name %}
                         opsec_bad
-                    {% elif 'peb_walk' in project.settings.carrier_name %}
+                    {% elif 'peb_walk' in settings.carrier_name %}
                         opsec_bad
-                    {% elif 'change' in project.settings.carrier_name %}
+                    {% elif 'change' in settings.carrier_name %}
                         opsec_neutral
                     {% else %}
                         opsec_good
@@ -172,7 +172,7 @@
                                 aria-label="CARRIERNAME" onchange="this.form.submit()">
                             {% for name in carrier_names %}
                             <option value="{{name}}"
-                                {% if name in project.settings.carrier_name %} selected {% endif %}
+                                {% if name in settings.carrier_name %} selected {% endif %}
                             >{{name}}</option>
                             {% endfor %}
                         </select>
@@ -188,7 +188,7 @@
                                 aria-label="INJECTSTYLE" onchange="this.form.submit()">
                             {% for name, value in carrier_invoke_styles %}
                             <option value="{{name}}"
-                                {% if value in project.settings.carrier_invoke_style.value %} selected {% endif %}
+                                {% if value in settings.carrier_invoke_style.value %} selected {% endif %}
                             >{{value}}</option>
                             {% endfor %}
                         </select>
@@ -204,7 +204,7 @@
                                 aria-label="PAYLOADLOCATION" onchange="this.form.submit()">
                             {% for name, value in payload_locations %}
                             <option value="{{name}}"
-                            {% if value in project.settings.payload_location.value %} selected {% endif %}
+                            {% if value in settings.payload_location.value %} selected {% endif %}
                             >{{value}}</option>
                             {% endfor %}
                         </select>
@@ -231,7 +231,7 @@
                                 aria-label="DECODERESTYLE" onchange="this.form.submit()">
                             {% for name in decoder_styles %}
                                 <option value="{{name}}"
-                                    {% if name in project.settings.decoder_style %} selected {% endif %}
+                                    {% if name in settings.decoder_style %} selected {% endif %}
                                 >{{name}}
                             </option>
                             {% endfor %}
@@ -248,7 +248,7 @@
                                 aria-label="GUARDRAILSTYLE" onchange="this.form.submit()">
                             {% for name in guardrailstyles %}
                                 <option value="{{name}}"
-                                    {% if name in project.settings.plugin_guardrail %} selected {% endif %}
+                                    {% if name in settings.plugin_guardrail %} selected {% endif %}
                                 >{{name}}
                             </option>
                             {% endfor %}
@@ -256,14 +256,14 @@
                     </div>
                 </div>
 
-                {% if project.settings.plugin_guardrail != "none" %}
+                {% if settings.plugin_guardrail != "none" %}
                 <div class="form-group row">
                     <label for="guardrail" class="col-sm-5 col-form-label">
                         Guard Data
                     </label>
                     <div class="col-sm-7">
                         <input type="text" name="guardrail_data" class="hidden form-control" 
-                        placeholder="" value="{{project.settings.plugin_guardrail_data}}"
+                        placeholder="" value="{{settings.plugin_guardrail_data}}"
                         aria-label="guardrail_data" aria-describedby="basic-addon1"
                         onchange="this.form.submit()">
                     </div>
@@ -279,7 +279,7 @@
                                 aria-label="antiemulation" onchange="this.form.submit()">
                             {% for name in antiemulationstyles %}
                                 <option value="{{name}}"
-                                    {% if name in project.settings.plugin_antiemulation %} selected {% endif %}
+                                    {% if name in settings.plugin_antiemulation %} selected {% endif %}
                                 >{{name}}
                             </option>
                             {% endfor %}
@@ -296,7 +296,7 @@
                                 aria-label="decoy" onchange="this.form.submit()">
                             {% for name in decoystyles %}
                                 <option value="{{name}}"
-                                    {% if name in project.settings.plugin_decoy %} selected {% endif %}
+                                    {% if name in settings.plugin_decoy %} selected {% endif %}
                                 >{{name}}
                             </option>
                             {% endfor %}
@@ -313,7 +313,7 @@
                                 aria-label="virtualprotect" onchange="this.form.submit()">
                             {% for name in virtualprotectstyles %}
                                 <option value="{{name}}"
-                                    {% if name in project.settings.plugin_virtualprotect %} selected {% endif %}
+                                    {% if name in settings.plugin_virtualprotect %} selected {% endif %}
                                 >{{name}}
                             </option>
                             {% endfor %}

@@ -29,7 +29,7 @@ def create_c_from_template(settings: Settings, payload_len: int):
     dst = "{}{}/".format(PATH_WEB_PROJECT, settings.project_name)
 
     logger.info("-[ Carrier create Template: {}".format(
-        settings.main_c_path))
+        settings.project_c_path))
     
     # check that source directory exists
     if not os.path.exists(src):
@@ -139,6 +139,6 @@ def create_c_from_template(settings: Settings, payload_len: int):
         'PAYLOAD_LEN': payload_len,
         'plugin_virtualprotect': plugin_virtualprotect,
     })
-    with open(settings.main_c_path, "w", encoding='utf-8') as file:
+    with open(settings.project_c_path, "w", encoding='utf-8') as file:
         file.write(rendered_template)
         observer.add_text_file("main_c_rendered", rendered_template)

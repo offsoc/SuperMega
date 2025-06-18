@@ -11,8 +11,8 @@
     <h1> Projects </h1>
 
     <ul>
-      {% for project in projects %}
-        <li><a href="/project/{{project.name}}">{{ project.name }}</a></li>
+      {% for settings in project_settings %}
+        <li><a href="/project/{{settings.project_name}}">{{ settings.project_name }}</a></li>
       {% endfor %}
     </ul>
 

