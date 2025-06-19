@@ -37,8 +37,8 @@ thread_running = False
 
 @views_project.route("/projects")
 def projects_route():
-    projects_settings = storage.get_project_settings()
-    return render_template('projects.html', projects_settings=projects_settings)
+    project_settings = storage.get_project_settings()
+    return render_template('projects.html', project_settings=project_settings)
 
 
 @views_project.route("/project/<name>")
@@ -51,7 +51,7 @@ def project(name):
     project_setting.print()
     
     is_built = False
-    if os.path.exists(project_setting.project_exe_path):
+    if os.path.exists(project_setting.get_inject_exe_out()):
         is_built = True
 
     exports = []
