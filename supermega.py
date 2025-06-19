@@ -37,8 +37,9 @@ def main():
     parser.add_argument('--guardrail', type=str, help='guardrails: Enable execution guardrails', default="none")
     parser.add_argument('--guardrail-key', type=str, help='guardrails: key', default="")
     parser.add_argument('--guardrail-value', type=str, help='guardrails: value', default="")
-    parser.add_argument('--no-fix-iat', action='store_true', help='Fix missing IAT entries in the infectable executable', default=False)
     parser.add_argument('--carrier_invoke', type=str, help='how carrier is started: \"backdoor\" to rewrite call instruction, \"eop\" for entry point', choices=["eop", "backdoor"], default="backdoor")
+    parser.add_argument('--payload_location', type=str, help='where to put the payload: "code" or "data"', choices=[".code", ".rdata"], default=".rdata" )
+    parser.add_argument('--no-fix-iat', action='store_true', help='Fix missing IAT entries in the infectable executable', default=False)
     parser.add_argument('--start', action='store_true', help='Start the infected executable at the end for testing')
     parser.add_argument('--short-call-patching', action='store_true', help='Debug: Make short calls long. You will know when you need it.')
     parser.add_argument('--no-clean-at-start', action='store_true', help='Debug: Dont remove any temporary files at start')
@@ -81,7 +82,11 @@ def main():
 
     settings.decoder_style = args.decoder
     settings.carrier_name = args.carrier
-    settings.payload_location = PayloadLocation.CODE  # makes sense
+    if args.payload_location == ".code":
+        settings.payload_location = PayloadLocation.CODE
+    elif args.payload_location == ".rdata":
+        settings.payload_location = PayloadLocation.DATA
+
     if args.short_call_patching:
         settings.short_call_patching = True
     if args.carrier_invoke == "eop":
