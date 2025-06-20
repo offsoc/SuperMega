@@ -224,6 +224,7 @@ def start_real(settings: Settings) -> bool:
     try:         
         injector.inject_exe()
     except Exception as e:
+        logger.error("Error injecting executable: {}".format(e))
         return False
     #observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.get_inject_exe_out(), 300))
 

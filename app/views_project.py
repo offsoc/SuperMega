@@ -174,60 +174,72 @@ def add_project():
         project_name = request.form['project_name']
         comment = request.form['comment']
 
+        # check if already exists
+        if storage.get_project_setting(project_name) != None:
+            logger.error("Project {} already exists".format(project_name))
+            return redirect("/projects", code=302)
+
         # Empty settings, except name
         settings = Settings(project_name)
+        settings.project_comment = comment
 
-        # new project?
-        if storage.get_project_setting(project_name) == None:
-            # Sane defaults for web
-            settings.injectable_base = "7z.exe"
-            settings.payload_base = "calc64.bin"
+        # Sane defaults for web
+        settings.injectable_base = "7z.exe"
+        settings.payload_base = "calc64.bin"
 
-            settings.decoder_style = "xor_2"
-            settings.carrier_name = "alloc_rw_rx"
-            settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
-            settings.payload_location = PayloadLocation.CODE
-            settings.fix_missing_iat = True
-            settings.plugin_antiemulation = "sirallocalot"
+        settings.decoder_style = "xor_2"
+        settings.carrier_name = "alloc_rw_rx"
+        settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
+        settings.payload_location = PayloadLocation.CODE
+        settings.fix_missing_iat = True
+        settings.plugin_antiemulation = "sirallocalot"
 
-            # add new project
-            settings.project_comment = comment
-            storage.add_project_setting(settings)
+        # add new project to disk
+        storage.add_project_setting(settings)
         
-        # update project
-        else:
-            logger.info("Update project: {}".format(project_name))
-
-            shellcode_file = request.form['shellcode']
-            injectable_file = request.form['exe']
-            dll_func = request.form.get('dllfunc', "")
-
-            settings.injectable_base = injectable_file
-            settings.payload_base = shellcode_file
-            settings.dllfunc = dll_func
-
-            settings.fix_missing_iat = True if request.form.get('fix_missing_iat') != None else False
-            settings.carrier_name = request.form['carrier_name']
-            settings.plugin_antiemulation = request.form['antiemulation']
-            settings.plugin_decoy = request.form['decoy']
-            settings.plugin_guardrail = request.form['guardrail']
-            carrier_invoke_style = request.form['carrier_invoke_style']
-            settings.carrier_invoke_style = CarrierInvokeStyle[carrier_invoke_style]
-            settings.decoder_style = request.form['decoder_style']
-            payload_location = request.form['payload_location']
-            settings.payload_location = PayloadLocation[payload_location]
-            settings.plugin_guardrail_data_key = request.form.get('guardrail_data_key', settings.plugin_guardrail_data_key)
-            settings.plugin_guardrail_data_value = request.form.get('guardrail_data_value', settings.plugin_guardrail_data_value)
-            settings.plugin_virtualprotect = request.form.get('virtualprotect', "standard")
-
-            # overwrite project
-            #settings = storage.get_project(project_name)
-            storage.save_project_settings(settings)
-
         return redirect("/project/{}".format(project_name), code=302)
     
     else: # GET
         return render_template('project_add_get.html')
+    
+
+@views_project.route("/project_update", methods=['POST'])
+def update_project():
+    project_name = request.form['project_name']
+    comment = request.form['comment']
+
+    logger.info("Update project: {}".format(project_name))    
+    settings: Settings|None = storage.get_project_setting(project_name)
+    if settings == None:
+        logger.error("Project {} not found".format(project_name))
+        return redirect("/projects", code=302)
+    
+    shellcode_file = request.form['shellcode']
+    injectable_file = request.form['exe']
+    dll_func = request.form.get('dllfunc', "")
+
+    settings.injectable_base = injectable_file
+    settings.payload_base = shellcode_file
+    settings.dllfunc = dll_func
+
+    settings.fix_missing_iat = True if request.form.get('fix_missing_iat') != None else False
+    settings.carrier_name = request.form['carrier_name']
+    settings.plugin_antiemulation = request.form['antiemulation']
+    settings.plugin_decoy = request.form['decoy']
+    settings.plugin_guardrail = request.form['guardrail']
+    carrier_invoke_style = request.form['carrier_invoke_style']
+    settings.carrier_invoke_style = CarrierInvokeStyle[carrier_invoke_style]
+    settings.decoder_style = request.form['decoder_style']
+    payload_location = request.form['payload_location']
+    settings.payload_location = PayloadLocation[payload_location]
+    settings.plugin_guardrail_data_key = request.form.get('guardrail_data_key', settings.plugin_guardrail_data_key)
+    settings.plugin_guardrail_data_value = request.form.get('guardrail_data_value', settings.plugin_guardrail_data_value)
+    settings.plugin_virtualprotect = request.form.get('virtualprotect', "standard")
+
+    # overwrite project
+    storage.save_project_settings(settings)
+
+    return redirect("/project/{}".format(project_name), code=302)
 
 
 def supermega_thread(settings: Settings):
