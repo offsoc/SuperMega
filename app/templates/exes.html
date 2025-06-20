@@ -8,35 +8,24 @@
 
     <div class="indent">
 
-    <h1> Exes </h1>
+    Injectables in <code>data/binary/exes</code>
 
-    <table class="table">
-        <tr>
-            <th>Exe</th>
-            <th>Sections</th>
-        </tr>
-        {% for exe in exes %}
-        <tr>
-            <td><a href="/exes/{{exe['name']}}">{{exe['name']}}</a></td>
-            <td>
-                <table class="table">
-                    <tr>
-                        <th>name</th>
-                        <th>raw size</th>
-                        <th>virt size</th>
-                        <th> diff </th>
-                    </tr>
-                    {% for section in exe['sections'] %}
-                    <tr>
-                        <td>{{section['name']}}</td>
-                        <td>{{section['raw_size']}}</td>
-                        <td>{{section['virt_size']}}</td>
-                        <td>{{section['raw_size'] - section['virt_size']}}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
-            </td>
-        </tr>
-        {% endfor %}
+    {% for exe in exes %}
+        <h3>{{exe['name']}}</h3>
+        <a href="/exes/{{exe['name']}}">More details</a>
+
+        <table class="table">
+            <tr>
+                <th>name</th>
+                <th>raw size</th>
+            </tr>
+            {% for section in exe['sections'] %}
+            <tr>
+                <td>{{section['name']}}</td>
+                <td>{{section['raw_size']}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% endfor %}
     </table>
 

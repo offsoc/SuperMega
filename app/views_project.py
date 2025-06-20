@@ -45,7 +45,7 @@ def projects_route():
 def project(name):
     project_setting = storage.get_project_setting(name)
     if project_setting == None:
-        logger.error("Project {} not found".format(name))<<<<<
+        logger.error("Project {} not found".format(name))
         return redirect("/projects", code=302)
     
     project_setting.print()

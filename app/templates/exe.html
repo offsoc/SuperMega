@@ -9,18 +9,25 @@
 <div class="indent">
 <div class="row">
 
-<h2>Sections</h2>
+<h1>Injectable: {{superpe.filepath}}</h1>
 
 
 <div class="col-6">
-    {% if iat|length > 0 %}
-    
     <h2> IAT Imports DLLs</h2>
-    <ul>
-        {% for dll_resolve in resolved_dlls %}
-        <li> {{ dll_resolve.dllname }}: {{ dll_resolve.cdll_res }} : {{ dll_resolve.path_res }}</li>
-        {% endfor%}
-    </ul>
+    <table>
+    <tr>
+        <th>Import</th>
+        <th>available</th>
+        <th>location</th>
+    </tr>
+    {% for dll_resolve in resolved_dlls %}
+    <tr>
+        <td>{{dll_resolve.dllname}}</td>
+        <td>{{dll_resolve.cdll_res}}</td>
+        <td>{{dll_resolve.path_res}}</td>
+    </tr>
+    {% endfor %}
+    </table>
 
     <h2> IAT Imports functions</h2>
     {% for dll in iat %}
@@ -30,7 +37,6 @@
         {% endfor%}
     </ul>
     {% endfor %}
-    {% endif %}
 </div>
 
 

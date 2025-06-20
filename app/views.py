@@ -20,7 +20,6 @@ def index():
 
 @views.route("/exes/<exe_name>")
 def exe_view(exe_name):
-    # TODO
     filepath = "{}{}".format(PATH_EXES, exe_name)
     if not os.path.exists(filepath):
         filepath = "{}{}".format(PATH_EXES_MORE, exe_name)
