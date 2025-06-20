@@ -98,7 +98,6 @@ def project(name):
     project_dir = os.path.dirname(os.getcwd() + "\\" + project_setting.project_path)
     log_files = get_logfiles(project_setting.project_path)
     exes = list_files_and_sizes(PATH_EXES)
-    #exes += list_files_and_sizes(PATH_EXES_MORE, prepend=PATH_EXES_MORE)
     shellcodes = list_files_and_sizes(PATH_SHELLCODES)
 
     carrier_names = get_template_names()

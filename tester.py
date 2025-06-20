@@ -24,6 +24,11 @@ def main():
         print("{} directory does not exist".format(os.path.dirname(VerifyFilename)))
         return
     
+    if len(sys.argv) < 2:
+        print("Usage: python tester.py <test>")
+        print("Available tests: all, common, dll_loader, exe_code, exe_data, dll_code, dll_data")
+        return
+    
     match sys.argv[1]:
         case "all":
             test_common()
@@ -55,7 +60,9 @@ def test_common():
     print("Testing: COMMON A")
 
     settings = Settings("unittest")
-    settings.payload_path = FilePath(PATH_SHELLCODES + "createfile.bin")
+    settings.injectable_base = "procexp64.exe"
+    settings.payload_base = "createfile.bin"
+
     settings.verify = True
     settings.try_start_final_infected_exe = False
     settings.payload_location = PayloadLocation.CODE
@@ -66,8 +73,6 @@ def test_common():
     settings.decoder_style = "plain"
     settings.carrier_name = "alloc_rw_rwx" # important (not rx)
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
-    settings.inject_exe_in = FilePath(PATH_EXES + "procexp64.exe")
-    settings.inject_exe_out = FilePath(PATH_EXES + "procexp64.verify.exe")
     if not start(settings):
         return
 
@@ -104,12 +109,12 @@ def test_common():
 def test_dll_loader():
     print("Testing: DLL Loader")
     settings = Settings("unittest")
-    settings.payload_path = FilePath(PATH_SHELLCODES + "createfile.dll")
+    settings.injectable_base = "procexp64.exe"
+    settings.payload_base = "createfile.dll"
+
     settings.verify = True
     settings.try_start_final_infected_exe = False
     settings.payload_location = PayloadLocation.CODE   # important
-    settings.inject_exe_in = FilePath(PATH_EXES + "procexp64.exe")
-    settings.inject_exe_out = FilePath(PATH_EXES + "procexp64.verify.exe")
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
 
     print("Test DLL Loader 1/2: procexp, backdoor main, dll loader alloc")
@@ -126,7 +131,8 @@ def test_dll_loader():
 def test_exe_code():
     print("Testing: EXEs: Inject payload into .text")
     settings = Settings("unittest")
-    settings.payload_path = FilePath(PATH_SHELLCODES + "createfile.bin")
+    settings.injectable_base = "7z.exe"
+    settings.payload_base = "createfile.bin"
     settings.verify = True
     settings.try_start_final_infected_exe = False
     settings.payload_location = PayloadLocation.CODE
@@ -135,8 +141,6 @@ def test_exe_code():
     print("Test EXE 1/4: 7z, peb-walk, change-entrypoint")
     settings.carrier_name = "peb_walk"
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
-    settings.inject_exe_in = FilePath(PATH_EXES + "7z.exe")
-    settings.inject_exe_out = FilePath(PATH_EXES + "7z.verify.exe")
     if not start(settings):
         return
 
@@ -144,17 +148,15 @@ def test_exe_code():
     print("Test EXE 2/4: 7z, peb-walk, hijack main")
     settings.carrier_name = "peb_walk"
     settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
-    settings.inject_exe_in = FilePath(PATH_EXES + "7z.exe")
-    settings.inject_exe_out = FilePath(PATH_EXES + "7z.verify.exe")
     if not start(settings):
         return
+    
+    settings.injectable_base = "procexp64.exe"
 
     # procexp, iat-reuse, change-entrypoint
     print("Test EXE 3/4: procexp, iat-reuse, change-entrypoint")
     settings.carrier_name = "alloc_rw_rwx"
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
-    settings.inject_exe_in = FilePath(PATH_EXES + "procexp64.exe")
-    settings.inject_exe_out = FilePath(PATH_EXES + "procexp64.verify.exe")
     if not start(settings):
         return
 
@@ -162,8 +164,6 @@ def test_exe_code():
     print("Test EXE 4/4: procexp, iat-reuse, backdoor")
     settings.carrier_name = "alloc_rw_rwx"
     settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
-    settings.inject_exe_in = FilePath(PATH_EXES + "procexp64.exe")
-    settings.inject_exe_out = FilePath(PATH_EXES + "procexp64.verify.exe")
     if not start(settings):
         return
 
@@ -171,7 +171,9 @@ def test_exe_code():
 def test_exe_data():
     print("Testing: EXEs: Inject into .data")
     settings = Settings("unittest")
-    settings.payload_path = FilePath(PATH_SHELLCODES + "createfile.bin")
+    settings.injectable_base = "7z.exe"
+    settings.payload_base = "createfile.bin"
+
     settings.verify = True
     settings.try_start_final_infected_exe = False
     settings.payload_location = PayloadLocation.DATA
@@ -180,8 +182,6 @@ def test_exe_data():
     print("Test EXE 1/4: 7z, peb-walk, change-entrypoint")
     settings.carrier_name = "peb_walk"
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
-    settings.inject_exe_in = FilePath(PATH_EXES + "7z.exe")
-    settings.inject_exe_out = FilePath(PATH_EXES + "7z.verify.exe")
     if not start(settings):
         return
 
@@ -189,17 +189,15 @@ def test_exe_data():
     print("Test EXE 2/4: 7z, peb-walk, hijack main")
     settings.carrier_name = "peb_walk"
     settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
-    settings.inject_exe_in = FilePath(PATH_EXES + "7z.exe")
-    settings.inject_exe_out = FilePath(PATH_EXES + "7z.verify.exe")
     if not start(settings):
         return
+
+    settings.injectable_base = "procexp64.exe"
 
     # procexp, iat-reuse, change-entrypoint
     print("Test EXE 3/4: procexp, iat-reuse, change-entrypoint")
     settings.carrier_name = "alloc_rw_rwx"
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
-    settings.inject_exe_in = FilePath(PATH_EXES + "procexp64.exe")
-    settings.inject_exe_out = FilePath(PATH_EXES + "procexp64.verify.exe")
     if not start(settings):
         return
     
@@ -207,8 +205,6 @@ def test_exe_data():
     print("Test EXE 4/4: procexp, iat-reuse, backdoor")
     settings.carrier_name = "alloc_rw_rwx"
     settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
-    settings.inject_exe_in = FilePath(PATH_EXES + "procexp64.exe")
-    settings.inject_exe_out = FilePath(PATH_EXES + "procexp64.verify.exe")
     if not start(settings):
         return
 
@@ -216,7 +212,8 @@ def test_exe_data():
 def test_dll_code():
     print("Testing: DLLs code")
     settings = Settings("unittest")
-    settings.payload_path = FilePath(PATH_SHELLCODES + "createfile.bin")
+    settings.injectable_base = "libbz2.dll"
+    settings.payload_base = "createfile.bin"
     settings.verify = True
     settings.try_start_final_infected_exe = False
     settings.payload_location = PayloadLocation.CODE
@@ -224,16 +221,12 @@ def test_dll_code():
     print("Test DLL 1/4: libbz2.dll, peb-walk, change-entrypoint dllMain (func=None)")
     settings.carrier_name = "peb_walk"
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
-    settings.inject_exe_in = FilePath(PATH_DLLS + "libbz2.dll")
-    settings.inject_exe_out = FilePath(PATH_DLLS + "libbz2.verify.dll")
     if not start(settings):
         return
 
     print("Test DLL 2/4: libbz2.dll, peb-walk, hijack dllMain (func=None)")
     settings.carrier_name = "peb_walk"
     settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
-    settings.inject_exe_in = FilePath(PATH_DLLS + "libbz2.dll")
-    settings.inject_exe_out = FilePath(PATH_DLLS + "libbz2.verify.dll")
     if not start(settings):
         return
 
@@ -241,8 +234,6 @@ def test_dll_code():
     settings.dllfunc = "BZ2_bzDecompress"
     settings.carrier_name = "peb_walk"
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
-    settings.inject_exe_in = FilePath(PATH_DLLS + "libbz2.dll")
-    settings.inject_exe_out = FilePath(PATH_DLLS + "libbz2.verify.dll")
     if not start(settings):
         return
 
@@ -250,8 +241,6 @@ def test_dll_code():
     settings.dllfunc = "BZ2_bzdopen"
     settings.carrier_name = "peb_walk"
     settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
-    settings.inject_exe_in = FilePath(PATH_DLLS + "libbz2.dll")
-    settings.inject_exe_out = FilePath(PATH_DLLS + "libbz2.verify.dll")
     if not start(settings):
         return
 
@@ -259,7 +248,9 @@ def test_dll_code():
 def test_dll_data():
     print("Testing: DLLs data")
     settings = Settings("unittest")
-    settings.payload_path = FilePath(PATH_SHELLCODES + "createfile.bin")
+    settings.injectable_base = "libbz2.dll"
+    settings.payload_base = "createfile.bin"
+
     settings.verify = True
     settings.try_start_final_infected_exe = False
     settings.payload_location = PayloadLocation.DATA
@@ -267,16 +258,12 @@ def test_dll_data():
     print("Test DLL 1/4: libbz2.dll, peb-walk, change-entrypoint dllMain (func=None)")
     settings.carrier_name = "peb_walk"
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
-    settings.inject_exe_in = FilePath(PATH_DLLS + "libbz2.dll")
-    settings.inject_exe_out = FilePath(PATH_DLLS + "libbz2.verify.dll")
     if not start(settings):
         return
 
     print("Test DLL 2/4: libbz2.dll, peb-walk, hijack dllMain (func=None)")
     settings.carrier_name = "peb_walk"
     settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
-    settings.inject_exe_in = FilePath(PATH_DLLS + "libbz2.dll")
-    settings.inject_exe_out = FilePath(PATH_DLLS + "libbz2.verify.dll")
     if not start(settings):
         return
 
@@ -284,8 +271,6 @@ def test_dll_data():
     settings.dllfunc = "BZ2_bzDecompress"
     settings.carrier_name = "peb_walk"
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
-    settings.inject_exe_in = FilePath(PATH_DLLS + "libbz2.dll")
-    settings.inject_exe_out = FilePath(PATH_DLLS + "libbz2.verify.dll")
     if not start(settings):
         return
 
@@ -293,8 +278,6 @@ def test_dll_data():
     settings.dllfunc = "BZ2_bzdopen"
     settings.carrier_name = "peb_walk"
     settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
-    settings.inject_exe_in = FilePath(PATH_DLLS + "libbz2.dll")
-    settings.inject_exe_out = FilePath(PATH_DLLS + "libbz2.verify.dll")
     if not start(settings):
         return
     

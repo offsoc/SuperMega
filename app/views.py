@@ -15,16 +15,13 @@ logger = logging.getLogger("Views")
 @views.route("/")
 def index():
     return render_template('index.html')
-    return redirect("/project/default", code=302)
 
 
 @views.route("/exes/<exe_name>")
 def exe_view(exe_name):
     filepath = "{}{}".format(PATH_EXES, exe_name)
     if not os.path.exists(filepath):
-        filepath = "{}{}".format(PATH_EXES_MORE, exe_name)
-        if not os.path.exists(filepath):
-            return "File not found: {}".format(exe_name)
+       return "File not found: {}".format(exe_name)
 
     superpe = SuperPe(filepath)
 

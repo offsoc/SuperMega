@@ -70,7 +70,7 @@ class SuperPeTest(unittest.TestCase):
 
 
     def test_dll(self):
-        dll_filepath = PATH_DLLS + "TestDLL.dll"
+        dll_filepath = PATH_EXES + "TestDLL.dll"
         superpe = SuperPe(dll_filepath)
 
         # Properties
