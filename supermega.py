@@ -73,13 +73,6 @@ def main():
         settings.plugin_guardrail_data_key = args.guardrail_key
         settings.plugin_guardrail_data_value = args.guardrail_value
 
-    logger.info("-( Config: Implant IAT fixup if necessary: {}".format(settings.fix_missing_iat))
-    if settings.plugin_guardrail != "none":
-        logger.info("-( Config: Guardrails Plugin: {}  {}/{}".format(
-            settings.plugin_guardrail,
-            settings.plugin_guardrail_data_key,
-            settings.plugin_guardrail_data_value))
-
     settings.decoder_style = args.decoder
     settings.carrier_name = args.carrier
     if args.payload_location == ".code":
@@ -118,7 +111,7 @@ def start(settings: Settings) -> int:
     config.make_encryption_keys()
 
     # Prepare the project: copy all files to projects/<project_name>/
-    prepare_project(settings.project_name, settings)
+    prepare_project(settings.project_name)
 
     # Do the thing and catch the errors
     ret = False

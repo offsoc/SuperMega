@@ -28,7 +28,7 @@ def create_c_from_template(settings: Settings, payload_len: int):
     src = "{}{}/".format(PATH_CARRIER, settings.carrier_name)
     dst = "{}{}/".format(PATH_WEB_PROJECT, settings.project_name)
 
-    logger.info("-[ Carrier create Template: {}".format(
+    logger.info("-[ Create Carrier: {}".format(
         settings.project_c_path))
     
     # check that source directory exists
@@ -43,14 +43,13 @@ def create_c_from_template(settings: Settings, payload_len: int):
 
     logger.info("    Carrier: {}".format(
         settings.carrier_name))
-    logger.info("    Carrier: Code into: {}".format(
+    logger.info("    Store payload in: {}".format(
         settings.payload_location.value))
-    logger.info("    Carrier: Decoder: {}".format(
+    logger.info("    Use Decoder: {}".format(
         settings.decoder_style))
-    logger.info("    Carrier: Invoker: {}".format(
+    logger.info("    Use Invoker: {}".format(
         settings.carrier_invoke_style.value))
-
-    logger.info("    Carrier AntiEmulation: {}".format(
+    logger.info("    Use AntiEmulation: {}".format(
         settings.plugin_antiemulation)
     )
     if settings.plugin_guardrail != "none":

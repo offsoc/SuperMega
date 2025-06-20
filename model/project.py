@@ -36,11 +36,10 @@ class Project():
         logger.info("Injectable Path: {}".format(self.injectable.exe_filepath))
 
 
-def prepare_project(project_name, settings):
-    src = "{}{}/".format(PATH_CARRIER, settings.carrier_name)
+def prepare_project(project_name):
     dst = "{}{}/".format(PATH_WEB_PROJECT, project_name)
 
-    logger.info("-[ Cleanup project: {}".format(project_name))
+    logger.info("-[ Prepare and cleanup project: {}".format(project_name))
 
     if not os.path.exists(dst):
         os.makedirs(dst)

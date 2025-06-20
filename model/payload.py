@@ -13,7 +13,6 @@ class Payload():
 
 
     def init(self) -> bool:
-        logger.info("-[ Payload: {}".format(self.payload_path))
         if not os.path.exists(self.payload_path):
             logger.error("Payload file does not exist: {}".format(self.payload_path))
             return False
@@ -21,6 +20,7 @@ class Payload():
         with open(self.payload_path, 'rb') as f:
             self.payload_data = f.read()
 
-        logger.info("    Size: {} bytes".format(len(self.payload_data)))
+        logger.info("-[ Payload: {} ({} bytes)".format(
+            self.payload_path, len(self.payload_data)))
         return True
 

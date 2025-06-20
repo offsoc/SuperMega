@@ -114,8 +114,10 @@ class Injector():
         exe_out = self.settings.get_inject_exe_out()
         carrier_invoke_style: CarrierInvokeStyle = self.settings.carrier_invoke_style
 
-        logger.info("-[ Injecting Carrier".format())
+        logger.info("-[ Injecting Carrier into injectable".format())
         logger.info("    Injectable: {} -> {}".format(exe_in, exe_out))
+        logger.info("    Implant IAT fixup if necessary: {}".format(self.settings.fix_missing_iat))
+
 
         # Patch IAT (if necessary and wanted)
         self.injectable_patch_iat()
@@ -197,7 +199,7 @@ class Injector():
 
 
     def injectable_patch_iat(self):
-        logger.info("    Checking if IAT entries required by carrier are available")
+        #logger.info("    Checking if IAT entries required by carrier are available")
         iatRequests = self.injectable.get_all_iat_requests()
         iatMissing = []
         
@@ -212,7 +214,7 @@ class Injector():
                     iatRequest.name))
                 iatMissing.append(iatRequest)
 
-        logger.info("    IAT entries missing: {}".format(len(iatMissing)))
+        logger.info("    IAT entries missing in injectable for carrier: {}".format(len(iatMissing)))
         for iatRequest in iatMissing:
             # Not available, check if we can patch it
             iat_name = self.superpe.get_replacement_iat_for("KERNEL32.dll", iatRequest.name)
@@ -272,7 +274,7 @@ class Injector():
             return
         
         # insert data
-        logger.info("    Inject Carrier data into injectable .rdata/.text")
+        logger.info("    Inject Carrier-data into injectable")
         for datareuse_fixup in reusedata_fixups:
             logger.debug("      Handling DataReuse Fixup: {} (.code: {})".format(
                 datareuse_fixup.string_ref, datareuse_fixup.in_code))

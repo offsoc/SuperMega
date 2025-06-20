@@ -45,7 +45,7 @@ def projects_route():
 def project(name):
     project_setting = storage.get_project_setting(name)
     if project_setting == None:
-        logger.error("Project {} not found".format(name))
+        logger.error("Project {} not found".format(name))<<<<<
         return redirect("/projects", code=302)
     
     project_setting.print()
@@ -190,6 +190,7 @@ def add_project():
             settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
             settings.payload_location = PayloadLocation.CODE
             settings.fix_missing_iat = True
+            settings.plugin_antiemulation = "sirallocalot"
 
             # add new project
             settings.project_comment = comment
@@ -253,7 +254,7 @@ def build_project(project_name):
 
     project_settings.try_start_final_infected_exe = False
     project = Project(project_settings)
-    prepare_project(project_name, project.settings)
+    prepare_project(project_name)
     thread = Thread(target=supermega_thread, args=(project.settings, ))
     thread.start()
     thread_running = True
