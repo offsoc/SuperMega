@@ -9,7 +9,7 @@ from pe.superpe import SuperPe, PeSection
 class SuperPeTest(unittest.TestCase):
 
     def test_exe(self):
-        dll_filepath = PATH_EXES + "procexp64.exe"
+        dll_filepath = PATH_INJECTABLES + "procexp64.exe"
         superpe = SuperPe(dll_filepath)
 
         # Properties
@@ -70,7 +70,7 @@ class SuperPeTest(unittest.TestCase):
 
 
     def test_dll(self):
-        dll_filepath = PATH_EXES + "TestDLL.dll"
+        dll_filepath = PATH_INJECTABLES + "TestDLL.dll"
         superpe = SuperPe(dll_filepath)
 
         # Properties

@@ -17,15 +17,15 @@ def index():
     return render_template('index.html')
 
 
-@views.route("/exes/<exe_name>")
-def exe_view(exe_name):
-    filepath = "{}{}".format(PATH_EXES, exe_name)
+@views.route("/injectables/<exe_name>")
+def injectable_view(exe_name):
+    filepath = "{}{}".format(PATH_INJECTABLES, exe_name)
     if not os.path.exists(filepath):
        return "File not found: {}".format(exe_name)
 
     superpe = SuperPe(filepath)
 
-    return render_template('exe.html', 
+    return render_template('injectable.html', 
                            superpe=superpe, 
                            resolved_dlls=resolve_dlls(superpe),
                            iat=superpe.get_iat_entries(),
@@ -33,16 +33,16 @@ def exe_view(exe_name):
     )
 
 
-@views.route("/exes")
-def exes_view():
-    exes = []
-    for file in os.listdir(PATH_EXES):
+@views.route("/injectables")
+def injectables_view():
+    injectables = []
+    for file in os.listdir(PATH_INJECTABLES):
         if not file.endswith(".dll") and not file.endswith(".exe"):
             continue
         if '.verify' in file or '.test' in file:
             continue
 
-        superpe = SuperPe("{}/{}".format(PATH_EXES, file))
+        superpe = SuperPe("{}/{}".format(PATH_INJECTABLES, file))
 
         e = {
             'name': file,
@@ -50,9 +50,9 @@ def exes_view():
             #'iat': superpe.get_iat_entries(),
             'sections': superpe.pe_sections,
         }
-        exes.append(e)
+        injectables.append(e)
         #break
-    return render_template('exes.html', exes=exes)
+    return render_template('injectables.html', injectables=injectables)
 
 
 @views.app_template_filter('hexint')

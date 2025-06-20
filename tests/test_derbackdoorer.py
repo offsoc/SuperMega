@@ -16,7 +16,7 @@ class DerBackdoorerTest(unittest.TestCase):
 
 
     def test_function_backdoorer_exe(self):
-        superpe = SuperPe(PATH_EXES + "iattest-full.exe")
+        superpe = SuperPe(PATH_INJECTABLES + "iattest-full.exe")
         function_backdoorer = FunctionBackdoorer(superpe, depth_option=DEPTH_OPTIONS.LEVEL1)
 
         addr = function_backdoorer.find_suitable_instruction_addr(superpe.get_entrypoint())
@@ -24,7 +24,7 @@ class DerBackdoorerTest(unittest.TestCase):
 
 
     def test_function_backdoorer_dll(self):
-        superpe = SuperPe(PATH_EXES + "TestDLL.dll")
+        superpe = SuperPe(PATH_INJECTABLES + "TestDLL.dll")
         function_backdoorer = FunctionBackdoorer(superpe)
 
         addr = function_backdoorer.find_suitable_instruction_addr(superpe.get_entrypoint())

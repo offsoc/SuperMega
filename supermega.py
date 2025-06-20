@@ -30,7 +30,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
     parser.add_argument('--shellcode', type=str, help='payload shellcode: data/binary/shellcodes/* (messagebox.bin, calc64.bin, ...)', default="calc64.bin")
-    parser.add_argument('--inject', type=str, help='which exe to inject into: data/binary/exes/* (7z.exe, procexp64.exe, ...)', default="procexp64.exe")
+    parser.add_argument('--inject', type=str, help='which exe to inject into: data/binary/injectables/* (7z.exe, procexp64.exe, ...)', default="procexp64.exe")
     parser.add_argument('--carrier', type=str, help='carrier: data/source/carrier/* (alloc_rw_rx, peb_walk, ...)', default="alloc_rw_rx")
     parser.add_argument('--decoder', type=str, help='decoder: data/source/decoders/* (xor_1, xor_2, plain, ...)', default="xor_2")
     parser.add_argument('--antiemulation', type=str, help='anti-emulation: data/source/antiemulation/* (sirallocalot, timeraw, none, ...)', default="sirallocalot")

@@ -78,18 +78,18 @@
                 <div class="form-group row">
                     <label for="exe" class="col-sm-3 col-form-label"
                            data-bs-toggle="tooltip" data-bs-placement="top" 
-                           title="EXE or DLL to infect, from data/binary/exes/"   
+                           title="EXE or DLL to infect, from data/binary/injectables/"   
                     >
                         Injectable
                     </label>
                     <div class="col-sm-9">
                         <select class="form-select" id="exe" name="exe" 
                                 aria-label="EXE" onchange="this.form.submit()">
-                            {% for exe in exes %}
-                            <option value="{{exe['filename']}}"
-                                {% if exe['filename'] == settings.injectable_base %} selected {% endif %}
+                            {% for injectable in injectables %}
+                            <option value="{{injectable['filename']}}"
+                                {% if injectable['filename'] == settings.injectable_base %} selected {% endif %}
                             >
-                            {{exe['filename'] | basename}} ({{exe['size']}})</option>
+                            {{injectable['filename'] | basename}} ({{injectable['size']}})</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -110,7 +110,7 @@
 
             <!-- Row 3: exe and shellcode info -->
             <div class="col-2">
-                <a href="/exes/{{settings.get_inject_exe_in() | basename}}">EXE Info:</a>
+                <a href="/injectables/{{settings.get_inject_exe_in() | basename}}">EXE Info:</a>
                 <ul>
                     <li>
                         {% if is_64 %}

@@ -100,7 +100,7 @@ C:\Users\dobin\Repos\SuperMega>python.exe supermega.py
 (helper.py       )    > Run process: ml64.exe projects/commandline/main.asm /link /OUT:projects/commandline/main.exe /entry:AlignRSP
 (assembler.py    )     Carrier Size: 590
 (injector.py     ) -[ Injecting Carrier
-(injector.py     )     Injectable: data/binary/exes/procexp64.exe -> projects/commandline/procexp64.infected.exe
+(injector.py     )     Injectable: data/binary/injectables/procexp64.exe -> projects/commandline/procexp64.infected.exe
 (injector.py     )     Checking if IAT entries required by carrier are available
 (injector.py     )     IAT entries missing: 0
 (injector.py     )     Inject: Write Carrier to 0x71C8D (0x7108D)
@@ -112,7 +112,7 @@ C:\Users\dobin\Repos\SuperMega>python.exe supermega.py
 
 To inject shellcode `messagebox.bin` into injectable `procexp64.exe` with carrier `alloc_rw_rx` and decoder `xor_1`, where: 
 * shellcode `messagebox.bin`: `data/binary/shellcodes/messagebox.bin`
-* injectable `procexp64.exe`: `data/binary/exes/procexp64.exe`
+* injectable `procexp64.exe`: `data/binary/injectables/procexp64.exe`
 * carrier `alloc_rw_rx`: `data/source/carrier/alloc_rw_rx/template.c`
 * decoder `xor_1`: `data/source/decoder/xor_1.c`
 
@@ -138,7 +138,7 @@ To inject shellcode `messagebox.bin` into injectable `procexp64.exe` with carrie
 (helper.py       )    > Run process: ml64.exe projects/commandline/main.asm /link /OUT:projects/commandline/main.exe /entry:AlignRSP
 (assembler.py    )     Carrier Size: 576
 (injector.py     ) -[ Injecting Carrier
-(injector.py     )     Injectable: data/binary/exes/procexp64.exe -> projects/commandline/procexp64.infected.exe
+(injector.py     )     Injectable: data/binary/injectables/procexp64.exe -> projects/commandline/procexp64.infected.exe
 (injector.py     )     Checking if IAT entries required by carrier are available
 (injector.py     )     IAT entries missing: 0
 (injector.py     )     Inject: Write Carrier to 0x71C43 (0x71043)
@@ -175,7 +175,7 @@ community edition.
 
 Input: 
 * `data/binary/shellcodes`: Input: Shellcodes we want to use as input (payload). .bin
-* `data/binary/exes/`: Input: Nonmalicious EXE files we inject into. .exe
+* `data/binary/injectables/`: Input: Nonmalicious EXE files we inject into. .exe
 
 Output:
 * `projects/<projectname>`: output: Project directory with generated files, including infected exe

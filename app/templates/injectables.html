@@ -8,18 +8,18 @@
 
     <div class="indent">
 
-    Injectables in <code>data/binary/exes</code>
+    Injectables in <code>data/binary/injectables</code>
 
-    {% for exe in exes %}
-        <h3>{{exe['name']}}</h3>
-        <a href="/exes/{{exe['name']}}">More details</a>
+    {% for injectable in injectables %}
+        <h3>{{injectable['name']}}</h3>
+        <a href="/injectables/{{injectable['name']}}">More details</a>
 
         <table class="table">
             <tr>
                 <th>name</th>
                 <th>raw size</th>
             </tr>
-            {% for section in exe['sections'] %}
+            {% for section in injectable['sections'] %}
             <tr>
                 <td>{{section['name']}}</td>
                 <td>{{section['raw_size']}}</td>

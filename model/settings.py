@@ -16,7 +16,7 @@ class Settings():
         self.project_exe_path: FilePath = FilePath(self.project_path + "main.exe")
         self.project_shc_path: FilePath = FilePath(self.project_path + "main.bin")
         
-        # IN: Injectable (like "7z.exe", in data/input/exes/)
+        # IN: Injectable (like "7z.exe", in data/input/injectables/)
         self.injectable_base: str = ""
         # IN: Payload / Shellcode (like "createfile.bin", in data/input/shellcodes/)
         self.payload_base: str = ""
@@ -62,7 +62,7 @@ class Settings():
     def get_inject_exe_in(self) -> FilePath:
         if self.injectable_base == "":
             return None
-        return FilePath(PATH_EXES + self.injectable_base)
+        return FilePath(PATH_INJECTABLES + self.injectable_base)
     
     def get_inject_exe_out(self) -> FilePath:
         return FilePath("{}{}".format(

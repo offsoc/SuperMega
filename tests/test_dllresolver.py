@@ -10,7 +10,7 @@ from pe.dllresolver import *
 class DllResolverTest(unittest.TestCase):
     
     def test_dllresolver(self):
-        filename = "data/binary/exes/7z.exe"
+        filename = "data/binary/injectables/7z.exe"
         superpe = SuperPe(filename)
 
         self.assertTrue(all_dll_exist(superpe))

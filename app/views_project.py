@@ -47,8 +47,7 @@ def project(name):
     if project_setting == None:
         logger.error("Project {} not found".format(name))
         return redirect("/projects", code=302)
-    
-    project_setting.print()
+    #project_setting.print()
     
     is_built = False
     if os.path.exists(project_setting.get_inject_exe_out()):
@@ -97,7 +96,7 @@ def project(name):
 
     project_dir = os.path.dirname(os.getcwd() + "\\" + project_setting.project_path)
     log_files = get_logfiles(project_setting.project_path)
-    exes = list_files_and_sizes(PATH_EXES)
+    injectables = list_files_and_sizes(PATH_INJECTABLES)
     shellcodes = list_files_and_sizes(PATH_SHELLCODES)
 
     carrier_names = get_template_names()
@@ -117,7 +116,7 @@ def project(name):
         project_dir=project_dir,
         settings=project_setting,
         
-        exes=exes,
+        injectables=injectables,
         shellcodes=shellcodes,
         carrier_names=carrier_names,
         decoder_styles=decoder_styles,
