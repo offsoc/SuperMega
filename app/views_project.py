@@ -189,7 +189,7 @@ def add_project():
 
         settings.decoder_style = "xor_2"
         settings.carrier_name = "alloc_rw_rx"
-        settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
+        settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorFunc
         settings.payload_location = PayloadLocation.CODE
         settings.fix_missing_iat = True
         settings.plugin_antiemulation = "sirallocalot"

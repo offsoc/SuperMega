@@ -23,7 +23,7 @@ class Settings():
 
         # Config
         self.carrier_name: str = ""
-        self.carrier_invoke_style: CarrierInvokeStyle = CarrierInvokeStyle.BackdoorCallInstr
+        self.carrier_invoke_style: CarrierInvokeStyle = CarrierInvokeStyle.BackdoorFunc
         self.decoder_style: str = "xor_2"
         self.payload_location: PayloadLocation = PayloadLocation.DATA
         self.short_call_patching: bool = False

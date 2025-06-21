@@ -28,6 +28,10 @@ def main():
     check_deps()
     settings = Settings("commandline")
 
+    if not os.path.exists(settings.project_path):
+        logger.info("Creating project directory: {}".format(settings.project_path))
+        os.makedirs(settings.project_path)
+
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
     parser.add_argument('--shellcode', type=str, help='payload shellcode: data/binary/shellcodes/* (messagebox.bin, calc64.bin, ...)', default="calc64.bin")
     parser.add_argument('--inject', type=str, help='which exe to inject into: data/binary/injectables/* (7z.exe, procexp64.exe, ...)', default="procexp64.exe")
@@ -37,7 +41,9 @@ def main():
     parser.add_argument('--guardrail', type=str, help='guardrails: Enable execution guardrails', default="none")
     parser.add_argument('--guardrail-key', type=str, help='guardrails: key', default="")
     parser.add_argument('--guardrail-value', type=str, help='guardrails: value', default="")
-    parser.add_argument('--carrier_invoke', type=str, help='how carrier is started: \"backdoor\" to rewrite call instruction, \"eop\" for entry point', choices=["eop", "backdoor"], default="backdoor")
+    parser.add_argument('--carrier_invoke', type=str, help='how carrier is started: \"backdoor\" to rewrite call instruction, \"overwrite\" to overwrite function', choices=["overwrite", "backdoor"], default="backdoor")
+    parser.add_argument('--dllfunc', type=str, help='The DLL function use for carrier_invoke', default="")
+
     parser.add_argument('--payload_location', type=str, help='where to put the payload: "code" or "data"', choices=[".code", ".rdata"], default=".rdata" )
     parser.add_argument('--no-fix-iat', action='store_true', help='Fix missing IAT entries in the infectable executable', default=False)
     parser.add_argument('--start', action='store_true', help='Start the infected executable at the end for testing')
@@ -55,9 +61,8 @@ def main():
     else:
         setup_logging(logging.INFO)
 
-    # IN:
-    #   Shellcode: filename
-    #   Inject: filename
+    # IN: Shellcode: filename
+    # IN: Inject: filename
     settings.injectable_base = args.inject
     settings.payload_base = args.shellcode
 
@@ -66,32 +71,33 @@ def main():
     settings.cleanup_files_on_start = not args.no_clean_at_start
     settings.cleanup_files_on_exit =not args.no_clean_at_exit
 
-    # Settings
+    # Misc
     settings.fix_missing_iat = not args.no_fix_iat
+    if args.short_call_patching:
+        settings.short_call_patching = True
+
+    # Main 1
+    settings.decoder_style = args.decoder
+    settings.carrier_name = args.carrier
+    settings.plugin_antiemulation = args.antiemulation
+
+    # Main 2
+    if args.payload_location == ".code":
+        settings.payload_location = PayloadLocation.CODE
+    elif args.payload_location == ".rdata":
+        settings.payload_location = PayloadLocation.DATA
+    if args.carrier_invoke == "overwrite":
+        settings.carrier_invoke_style = CarrierInvokeStyle.OverwriteFunc
+    elif args.carrier_invoke == "backdoor":
+        settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorFunc
+
+    # Plugins
     if args.guardrail:
         settings.plugin_guardrail = args.guardrail
         settings.plugin_guardrail_data_key = args.guardrail_key
         settings.plugin_guardrail_data_value = args.guardrail_value
 
-    settings.decoder_style = args.decoder
-    settings.carrier_name = args.carrier
-    if args.payload_location == ".code":
-        settings.payload_location = PayloadLocation.CODE
-    elif args.payload_location == ".rdata":
-        settings.payload_location = PayloadLocation.DATA
-
-    if args.short_call_patching:
-        settings.short_call_patching = True
-    if args.carrier_invoke == "eop":
-        settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
-    elif args.carrier_invoke == "backdoor":
-        settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
-    settings.plugin_antiemulation = args.antiemulation
-
-    if not os.path.exists(settings.project_path):
-        logger.info("Creating project directory: {}".format(settings.project_path))
-        os.makedirs(settings.project_path)
-    
+    # Start it
     exit_code = start(settings)
     exit(exit_code)
 

@@ -1,10 +1,13 @@
 from enum import Enum
 import os
 
+
+# FilePath type for better clarity in the code
 class FilePath(str):
     pass
 
-# with data/shellcodes/createfile.bin
+
+# for data/shellcodes/createfile.bin
 VerifyFilename: FilePath = FilePath("C:\\Temp\\a")
 
 # Input Binary
@@ -23,19 +26,16 @@ PATH_VIRTUALPROTECT = "data/source/virtualprotect/"
 PATH_WEB_PROJECT = "projects/"
 
 
+CODE_INJECT_SIZE_CHECK_ADD = 128
+
 class PayloadLocation(Enum):
     CODE = ".text"
     DATA = ".rdata"
 
 
 class CarrierInvokeStyle(Enum):
-    ChangeEntryPoint = "change EntryPoint"
-    BackdoorCallInstr = "backdoor Entrypoint"
-
-
-class FunctionInvokeStyle(Enum):
-    peb_walk = "peb_walk"
-    iat_reuse = "iat_reuse"
+    OverwriteFunc = "Overwrite Function"
+    BackdoorFunc = "Backdoor Function"
 
     
 class PeRelocEntry():
@@ -60,7 +60,3 @@ class IatEntry():
     def __str__(self):
         return "IatEntry: dll_name: {} func_name: {} iat_vaddr: 0x{:X}".format(
             self.dll_name, self.func_name, self.iat_vaddr)
-    
-
-
-CODE_INJECT_SIZE_CHECK_ADD = 128

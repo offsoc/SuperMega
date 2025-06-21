@@ -400,7 +400,7 @@ class SuperPe():
                 # Add the difference to the section's pointer to raw data
                 physical_address = section.PointerToRawData + virtual_offset
                 return physical_address
-        raise Exception("Cant translate VA to offset")
+        raise Exception("Cant translate VA 0x{:X} to offset".format(virtual_address))
     
 
     def write_pe_to_file(self, outfile: str):
