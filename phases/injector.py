@@ -107,6 +107,7 @@ class Injector():
             self.payload_rva = rdata_section.virt_addr + offset
             self.rdata_manager.add_range(offset, offset+len(self.payload.payload_data))
 
+
     ## Inject
 
     def inject_exe(self):
@@ -117,7 +118,6 @@ class Injector():
         logger.info("-[ Injecting Carrier into injectable".format())
         logger.info("    Injectable: {} -> {}".format(exe_in, exe_out))
         logger.info("    Implant IAT fixup if necessary: {}".format(self.settings.fix_missing_iat))
-
 
         # Patch IAT (if necessary and wanted)
         self.injectable_patch_iat()

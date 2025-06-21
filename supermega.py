@@ -148,6 +148,8 @@ def sanity_checks(settings):
 def start_real(settings: Settings) -> bool:
     """Main entry point for the application. This is where the magic happens (based on settings)"""
 
+    #settings.print()
+
     # Load our input
     project = Project(settings)
     if not project.init():
@@ -244,6 +246,8 @@ def start_real(settings: Settings) -> bool:
                 dllfunc=settings.dllfunc)
             if payload_exit_code != 0:
                 logger.warning("Payload exit code: {}".format(payload_exit_code))
+                return False
+            
         elif settings.try_start_final_infected_exe:
             run_exe(settings.get_inject_exe_out(), dllfunc=settings.dllfunc, check=False)
 

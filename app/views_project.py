@@ -263,6 +263,8 @@ def build_project(project_name):
     #        return redirect("/project/{}".format(project_name), code=302)
 
     project_settings.try_start_final_infected_exe = False
+    project_settings.cleanup_files_on_start = True  # cleanup, or it will be confusing if failed
+
     project = Project(project_settings)
     prepare_project(project_name)
     thread = Thread(target=supermega_thread, args=(project.settings, ))
