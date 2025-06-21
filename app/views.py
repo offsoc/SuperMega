@@ -48,11 +48,13 @@ def injectables_view():
             'name': file,
             #'exports': superpe.get_exports_full(),
             #'iat': superpe.get_iat_entries(),
-            'sections': superpe.pe_sections,
+            'superpe': superpe,
+            #'sections': superpe.pe_sections,
         }
         injectables.append(e)
         #break
-    return render_template('injectables.html', injectables=injectables)
+    return render_template('injectables.html', 
+                           injectables=injectables)
 
 
 @views.app_template_filter('hexint')
