@@ -150,26 +150,6 @@ To inject shellcode `messagebox.bin` into injectable `procexp64.exe` with carrie
 > C:\Users\dobin\Repos\SuperMega>.\projects\commandline\procexp64.infected.exe
 ```
 
-### Execution Guardrails 
-
-You can use the `env` execution guardrail to restriction execution where
-the environment matches your expectations. In the following example, 
-it requires the `VCINSTALLDIR` environment variable to contain 
-`Community`, which matches here. `\2022\Community\VC\`.
-
-```
-> set
-...
-VCINSTALLDIR=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\
-...
-
-> python.exe supermega.py ... --guardrail env --guardrail-key VCIDEInstallDir --guardrail-value Community
-```
-
-These make middleboxes like sandboxes unable to execute and therefore detect
-the payload, as it never gets decrypted. Until they install Visual Studio 2022
-community edition. 
-
 
 ## Directories
 
@@ -192,6 +172,8 @@ Modifiable:
 
 ## Installation
 
+Clear `projects/` when upgrading.
+
 VS2022 compiler is required:
 * `ml64.exe`
 * `cl.exe`
@@ -200,11 +182,6 @@ And the python packages:
 ```
 > pip.exe install -r requirements.txt
 ```
-
-Optional: 
-* `r2.exe`
-
-### VS2022 Components
 
 A list of packages/components which may be required for Visual Studio 2022:
 * C++ 2022 Redistributable Update
@@ -216,3 +193,121 @@ A list of packages/components which may be required for Visual Studio 2022:
 * C++ ATL for latest v143 build tools (x86 & x64)
 * C++ MFC for latest v143 build tools (x86 & x64)
 * Windows 11 SDK
+
+Optional: 
+* `r2.exe`
+
+
+## Settings
+
+Description of funtionality and settings.
+
+### Shellcode
+
+`--shellcode <filename.exe>`  
+The payload shellcode, like your CobaltStrike beacon. Should be x64.  
+Located in the `data/binary/shellcodes/` directory.  
+
+### Injectable
+
+`--inject <filename.exe>`  
+A 64-bit Windows PE executable used as a trojan. The shellcode will be injected in this EXE or DLL. The original functionality of the EXE/DLL will not work anymore (it will only execute the carrier with the shellcode it is carrying)  
+Located in the `data/binary/injectables/` directory.  
+
+### Carrier
+
+`--carrier <carrier_name>`  
+The code which loads the payload shellcode. This includes allocating memory, changing its permissions, and then finally executing it. It has the main() function (and will include Decoder, Anti-Emulation, and Guardrail modules).  
+Located in the `data/source/carrier` directory  
+
+*   alloc\_rw\_rx: Allocate RW memory, copy payload, then make it RX. **Recommended**.
+*   alloc\_rw\_rwx: Same as alloc\_rw\_rx, but useful for self-modyfing payloads (e.g. ShikataGaNai)
+*   change\_rw\_rx: Change the memory permissions of the payload to RW, decode, then RX (IMAGE spoofing, see `--`)
+*   dll\_loader\_alloc:
+*   dll\_loader\_change
+
+While the carrier is injected into the `.text` section, the payload can be placed
+in either `.rdata` or `.text`. 
+
+
+### Payload location
+
+`--payload_location [.code/.rdata]`  
+In which section the payload is stored.  
+
+* `data`: in `.rdata` which is the most natural (e.g. for entropy analysis). **Recommended**
+* `code`: in `.text`. This can be used for `change_rw_rx` carrier
+
+Putting the payload in the `.text` section allows us to use carrier `change_rw_rx`
+to decrypt it there. This can have the advantage of looking like its natural
+trusted IMAGE data. Its also possible to use carrier `dll_loader_change` with
+a DLL as payload which may even be more stealthy. 
+
+
+### Decoder
+
+`--decoder <decoder_name>`  
+How the payload is encrypted & decrypted.  
+
+*   plain: No encryption
+*   xor: Single byte xor key, random
+*   xor\_2: Two byte xor key, random. **Recommended**.
+
+### Anti-Emulation
+
+`--antiemulation <anti_emulation_name>`  
+
+*   none: No anti-emulation
+*   timeraw: CPU register time based
+*   sirallocalot: CPU cycles, memory and time based. Also does EDR-deconditioning. **Recommended**.
+
+### Guardrail
+
+`--guardrail GUARDRAIL`  
+`--guardrail-key GUARDRAIL_KEY`  
+`--guardrail-value GUARDRAIL_VALUE`  
+
+You can use the `env` execution guardrail to restriction execution where
+the environment (-variables) matches your expectations. In the following example, 
+it requires the `VCINSTALLDIR` environment variable to contain 
+`Community`, which matches here. `\2022\Community\VC\`.
+
+```
+> set
+...
+VCINSTALLDIR=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\
+...
+
+> python.exe supermega.py ... --guardrail env --guardrail-key VCIDEInstallDir --guardrail-value Community
+```
+
+These make middleboxes like sandboxes unable to execute and therefore detect
+the payload, as it never gets decrypted. Until they install Visual Studio 2022
+community edition. Use AD or NETLOGON (type `set` in cmd.exe to view env vars). 
+
+
+### Carrier Invoke
+
+How the carrier (which will load the payload shellcode) is invoked.  
+`--carrier_invoke <carrier_invoke_name>`  
+
+*   overwrite: Overwrites the `main()` function in `.text` with the carrier
+*   backdoor: Parse main function for a few unconditional jmp's, and change last jmp to jump to the carrier shellcode, located randomly in .text. **Recommended**.
+
+
+### DLL as Injectable
+
+When injecting INTO a DLL, `dllMain()` will be used instead of `main()`.  
+To backdoor a specific export, use `--dllfunc <export>`. 
+
+
+### DLL as payload
+
+
+
+
+### Fix IAT
+
+The carrier, or one of its modules, like the decoder, antiemulation, or guardrail, may require imports like Windows kernel32.dll functions. If these are not available in the injectable, the IAT is being patched for the required imports automatically. This will change the IAT of the injectable, which makes it less stealthy.  
+  
+If you want to keep maximum stealth, use `--no-fix-iat` and adjust your carrier/modules or exe manually.
