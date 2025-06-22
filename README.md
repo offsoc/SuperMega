@@ -198,23 +198,23 @@ Optional:
 * `r2.exe`
 
 
-## Settings
+## Configuration & OPSEC
 
 Description of funtionality and settings.
 
 
-### Shellcode
+### Shellcode / Payload
 
 `--shellcode <filename.bin>`  
 The 64-bit payload shellcode, like your CobaltStrike beacon. Should be x64.  
-Located in the `data/binary/shellcodes/` directory.  
+Located in the `data/binary/shellcodes/*.bin` directory.  
 
 
-### Injectable
+### Injectable / .exe .dll
 
 `--inject <filename.exe>`  
 A 64-bit Windows PE executable used as a trojan. The shellcode will be injected in this EXE or DLL. The original functionality of the EXE/DLL will not work anymore (it will only execute the carrier with the shellcode it is carrying)  
-Located in the `data/binary/injectables/` directory.  
+Located in the `data/binary/injectables/*.exe *.dll` directory.  
 
 Make sure it has all it's required DLLs. 
 
@@ -223,7 +223,7 @@ Make sure it has all it's required DLLs.
 
 `--carrier <carrier_name>`  
 C code which loads and executes the payload shellcode. This includes allocating memory, changing its permissions, and then finally executing it. It has the main() function, and modules: Decoder, Anti-Emulation, and Guardrail.  
-Located in the `data/source/carrier` directory  
+Located in the `data/source/carrier/*.c` directory  
 
 *   alloc\_rw\_rx: Allocate RW memory, copy payload, then make it RX. **Recommended**.
 *   alloc\_rw\_rwx: Same as alloc\_rw\_rx, but useful for self-modyfing payloads (e.g. ShikataGaNai)
@@ -253,24 +253,29 @@ a DLL as payload which may even be more stealthy.
 
 `--decoder <decoder_name>`  
 How the payload is encrypted & decrypted.  
+Located in the `data/source/decoder/*.c` directory.  
 
 *   plain: No encryption
 *   xor: Single byte xor key, random
 *   xor\_2: Two byte xor key, random. **Recommended**.
 
+
 ### Anti-Emulation
 
 `--antiemulation <anti_emulation_name>`  
+Located in the `data/source/antiemulation/*.c` directory.  
 
 *   none: No anti-emulation
 *   timeraw: CPU register time based
 *   sirallocalot: CPU cycles, memory and time based. Also does EDR-deconditioning. **Recommended**.
+
 
 ### Guardrail
 
 `--guardrail GUARDRAIL`  
 `--guardrail-key GUARDRAIL_KEY`  
 `--guardrail-value GUARDRAIL_VALUE`  
+Located in the `data/source/guardrails/*.c` directory.  
 
 You can use the `env` execution guardrail to restriction execution where
 the environment (-variables) matches your expectations. In the following example, 
