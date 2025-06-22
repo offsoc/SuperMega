@@ -124,7 +124,7 @@ def masm_shc(asm_text_lines: List[str]) -> str:
                     #    ofile.write("\tjmp\tmain\n")
                     elif params.append_rsp_stub:
                         append_align_rsp(ofile)
-                        logger.debug("[INFO] Entry Point: AlignRSP")
+                        #logger.debug("[INFO] Entry Point: AlignRSP")
 
                 if seg_name == "_BSS":
                     raise Exception(f"[ERROR] Line {line_count + 1}: _BSS segment detected! Remove all global and static variables!\n")

@@ -98,6 +98,10 @@
                 <!-- Input: DLL function -->
                 {% if exports != [] %}
                 <select class="form-select" name="dllfunc" aria-label="DLLFUNC" onchange="this.form.submit()">
+                    <option value=""
+                        {% if "" == settings.dllfunc %} selected {% endif %}
+                    >DllMain</option>
+
                     {% for export in exports %}
                     <option value="{{export['name']}}"
                         {% if export["name"] == settings.dllfunc %} selected {% endif %}

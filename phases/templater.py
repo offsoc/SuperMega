@@ -52,6 +52,11 @@ def create_c_from_template(settings: Settings, payload_len: int):
     logger.info("    Use AntiEmulation: {}".format(
         settings.plugin_antiemulation)
     )
+    if settings.dllfunc:
+        logger.info("    DLL Function: {}".format(
+            settings.dllfunc)
+        )
+
     if settings.plugin_guardrail != "none":
         logger.info("    Carrier Guardrail: {}  (key: {}  value: {})".format(
             settings.plugin_guardrail, 

@@ -189,6 +189,16 @@ class SuperPe():
                 return exp.address
         raise Exception("Cant find entry point for export {}".format(exportName))
 
+
+    def get_export_vaddr_by_name(self, exportName: str) -> Optional[int]:
+        d = [pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]]
+        self.pe.parse_data_directories(directories=d)
+        if self.pe.DIRECTORY_ENTRY_EXPORT.symbols == 0:
+            return None
+        for e in self.pe.DIRECTORY_ENTRY_EXPORT.symbols:
+            if e.name.decode() == exportName:
+                return e.address
+        return None
     
 
     def get_exports(self) -> List[str]:
