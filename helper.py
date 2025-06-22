@@ -34,7 +34,6 @@ def clean_files(settings):
         settings.project_asm_path,
         settings.project_shc_path,
         settings.project_exe_path,
-        settings.get_inject_exe_out(),
     ]
     for file in files_to_clean:
         pathlib.Path(file).unlink(missing_ok=True)

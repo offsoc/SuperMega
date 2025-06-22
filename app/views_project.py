@@ -9,6 +9,7 @@ from pygments.formatters import HtmlFormatter
 import difflib
 import subprocess
 from ansi2html import Ansi2HTMLConverter
+import pathlib
 
 from observer import observer
 from config import config
@@ -190,7 +191,7 @@ def add_project():
         settings.decoder_style = "xor_2"
         settings.carrier_name = "alloc_rw_rx"
         settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorFunc
-        settings.payload_location = PayloadLocation.CODE
+        settings.payload_location = PayloadLocation.DATA
         settings.fix_missing_iat = True
         settings.plugin_antiemulation = "sirallocalot"
 
@@ -256,6 +257,8 @@ def build_project(project_name):
     if project_settings == None:
         logger.error("Project {} not found".format(project_name))
         return redirect("/projects", code=302)
+    
+    pathlib.Path(project_settings.get_inject_exe_out()).unlink(missing_ok=True)
 
     #if project.settings.get_inject_exe_in().endswith(".dll"):
     #    if project.settings.dllfunc == "":
