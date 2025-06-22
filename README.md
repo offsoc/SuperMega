@@ -202,11 +202,13 @@ Optional:
 
 Description of funtionality and settings.
 
+
 ### Shellcode
 
-`--shellcode <filename.exe>`  
-The payload shellcode, like your CobaltStrike beacon. Should be x64.  
+`--shellcode <filename.bin>`  
+The 64-bit payload shellcode, like your CobaltStrike beacon. Should be x64.  
 Located in the `data/binary/shellcodes/` directory.  
+
 
 ### Injectable
 
@@ -214,17 +216,20 @@ Located in the `data/binary/shellcodes/` directory.
 A 64-bit Windows PE executable used as a trojan. The shellcode will be injected in this EXE or DLL. The original functionality of the EXE/DLL will not work anymore (it will only execute the carrier with the shellcode it is carrying)  
 Located in the `data/binary/injectables/` directory.  
 
+Make sure it has all it's required DLLs. 
+
+
 ### Carrier
 
 `--carrier <carrier_name>`  
-The code which loads the payload shellcode. This includes allocating memory, changing its permissions, and then finally executing it. It has the main() function (and will include Decoder, Anti-Emulation, and Guardrail modules).  
+C code which loads and executes the payload shellcode. This includes allocating memory, changing its permissions, and then finally executing it. It has the main() function, and modules: Decoder, Anti-Emulation, and Guardrail.  
 Located in the `data/source/carrier` directory  
 
 *   alloc\_rw\_rx: Allocate RW memory, copy payload, then make it RX. **Recommended**.
 *   alloc\_rw\_rwx: Same as alloc\_rw\_rx, but useful for self-modyfing payloads (e.g. ShikataGaNai)
-*   change\_rw\_rx: Change the memory permissions of the payload to RW, decode, then RX (IMAGE spoofing, see `--`)
-*   dll\_loader\_alloc:
-*   dll\_loader\_change
+*   change\_rw\_rx: Change the memory permissions of the payload to RW, decode, then RX (IMAGE spoofing, see payload_location`)
+*   dll\_loader\_alloc: `.dll` payload: Allocate RW memory, load DLL, then make it RX. 
+*   dll\_loader\_change: `.dll` payload: Change payload location to RW, load it, then make it RX. IMAGE spoofing. 
 
 While the carrier is injected into the `.text` section, the payload can be placed
 in either `.rdata` or `.text`. 
@@ -240,7 +245,7 @@ In which section the payload is stored.
 
 Putting the payload in the `.text` section allows us to use carrier `change_rw_rx`
 to decrypt it there. This can have the advantage of looking like its natural
-trusted IMAGE data. Its also possible to use carrier `dll_loader_change` with
+trusted IMAGE data (IMAGE spoofing). Its also possible to use carrier `dll_loader_change` with
 a DLL as payload which may even be more stealthy. 
 
 
@@ -298,12 +303,12 @@ How the carrier (which will load the payload shellcode) is invoked.
 ### DLL as Injectable
 
 When injecting INTO a DLL, `dllMain()` will be used instead of `main()`.  
-To backdoor a specific export, use `--dllfunc <export>`. 
+To backdoor or overwrite a specific export, use `--dllfunc <export>`. 
 
 
 ### DLL as payload
 
-
+When using a DLL instead of a shellcode, use carrier `dll_loader_alloc`, or `dll_loader_change`. 
 
 
 ### Fix IAT
