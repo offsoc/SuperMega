@@ -260,6 +260,15 @@ Located in the `data/source/decoder/*.c` directory.
 *   xor\_2: Two byte xor key, random. **Recommended**.
 
 
+### Carrier Invoke
+
+How the carrier (which will load the payload shellcode) is invoked.  
+`--carrier_invoke <carrier_invoke_name>`  
+
+*   overwrite: Overwrites the `main()` function in `.text` with the carrier
+*   backdoor: Parse main function for a few unconditional jmp's, and change last jmp to jump to the carrier shellcode, located randomly in .text. **Recommended**.
+
+
 ### Anti-Emulation
 
 `--antiemulation <anti_emulation_name>`  
@@ -294,15 +303,6 @@ VCINSTALLDIR=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\
 These make middleboxes like sandboxes unable to execute and therefore detect
 the payload, as it never gets decrypted. Until they install Visual Studio 2022
 community edition. Use AD or NETLOGON (type `set` in cmd.exe to view env vars). 
-
-
-### Carrier Invoke
-
-How the carrier (which will load the payload shellcode) is invoked.  
-`--carrier_invoke <carrier_invoke_name>`  
-
-*   overwrite: Overwrites the `main()` function in `.text` with the carrier
-*   backdoor: Parse main function for a few unconditional jmp's, and change last jmp to jump to the carrier shellcode, located randomly in .text. **Recommended**.
 
 
 ### DLL as Injectable
